@@ -10,6 +10,7 @@ bevy = { version = "0.14", default-features = false }
 bevy_rand = { version = "0.6", features = ["wyrand"] }
 bevy_prng = { version = "0.6", features = ["wyrand"] }
 bevy_anyhow_alert = "0.3"
+hexx = { version = "0.17" }
 
 # stdx
 anyhow = "1.0"
