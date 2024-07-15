@@ -4,6 +4,7 @@ resolver = "2"
 
 [workspace.dependencies]
 # plugins
+merchandise = { path = "plugins/merchandise" }
 
 # bevy
 bevy = { version = "0.14", default-features = false }
