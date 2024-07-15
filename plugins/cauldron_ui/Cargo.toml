@@ -1,0 +1,11 @@
+[package]
+name = "cauldron_ui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true, features = ["bevy_ui"] }
+actions = { workspace = true }
+cauldron = { workspace = true }
+game_instance = { workspace = true }
+monsters = { workspace = true }

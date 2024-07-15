@@ -1,0 +1,17 @@
+[package]
+name = "turns"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# plugins
+actions = { workspace = true }
+game_instance = { workspace = true }
+monsters = { workspace = true }
+
+# bevy
+bevy = { workspace = true }
+bevy_rand = { workspace = true }
+
+# stdx
+rand_core = { workspace = true }

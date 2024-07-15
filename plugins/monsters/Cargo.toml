@@ -1,0 +1,9 @@
+[package]
+name = "monsters"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+actions = { workspace = true }
+game_instance = { workspace = true }

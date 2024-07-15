@@ -1,0 +1,15 @@
+[package]
+name = "actions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# plugins
+game_instance = { workspace = true }
+
+# bevy
+bevy = { workspace = true }
+bevy_anytoasts = { workspace = true }
+
+# stdx
+anyhow = { workspace = true }
