@@ -4,20 +4,12 @@ resolver = "2"
 
 [workspace.dependencies]
 # plugins
-actions = { path = "plugins/actions" }
-cauldron = { path = "plugins/cauldron" }
-cauldron_ui = { path = "plugins/cauldron_ui" }
-encounter = { path = "plugins/encounter" }
-encounter_ui = { path = "plugins/encounter_ui" }
-game_instance = { path = "plugins/game_instance" }
-monsters = { path = "plugins/monsters" }
-turns = { path = "plugins/turns" }
 
 # bevy
-bevy = { version = "0.13", default-features = false }
+bevy = { version = "0.14", default-features = false }
 bevy_rand = { version = "0.6", features = ["wyrand"] }
 bevy_prng = { version = "0.6", features = ["wyrand"] }
-bevy_anytoasts = { git = "https://github.com/GroveStStudios/bevy_anytoasts" }
+bevy_anyhow_alert = "0.3"
 
 # stdx
 anyhow = "1.0"
@@ -25,16 +17,9 @@ rand_core = { version = "0.6" }
 thiserror = "1.0"
 
 [package]
-name = "tennis"
+name = "pewpewboom"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-actions = { workspace = true }
-cauldron = { workspace = true }
-cauldron_ui = { workspace = true }
-encounter = { workspace = true }
-encounter_ui = { workspace = true }
-game_instance = { workspace = true }
-turns = { workspace = true }
