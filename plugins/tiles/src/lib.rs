@@ -42,7 +42,7 @@ impl Position {
     }
 }
 
-pub 
+pub neighbor_along_ray()
 
 pub trait Tile {
     const POSITION: Position;
