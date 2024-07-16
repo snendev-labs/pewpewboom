@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 # plugins
-merchandise = { workspace = true }
 # bevy
 bevy = { workspace = true }
 # stdx
