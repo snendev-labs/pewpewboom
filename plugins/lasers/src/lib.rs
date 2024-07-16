@@ -139,3 +139,9 @@ pub struct Amplification(usize);
 #[derive(Component, Reflect, Deref, DerefMut)]
 
 pub struct Consumption(Entity);
+
+impl Consumption {
+    pub fn new(tile: Entity) -> Self {
+        Consumption(tile)
+    }
+}
