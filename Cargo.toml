@@ -7,6 +7,7 @@ resolver = "2"
 lasers = { path = "plugins/lasers"}
 merchandise = { path = "plugins/merchandise" }
 tiles = { path = "plugins/tiles" }
+health = { path = "plugins/health" }
 
 # bevy
 bevy = { version = "0.14", default-features = false }

@@ -33,9 +33,9 @@ where
 }
 
 pub trait Tile {
-    fn activate(&self, entity: Entity, position: &Position) -> impl Command;
+    fn activate(&self, entity: Entity, position: Position) -> impl Command;
 
-    fn on_hit(&self, entity: Entity) -> Option<impl Command>;
+    fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command>;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -48,9 +48,9 @@ impl TileSystemSet {
         mut collisions: EventReader<LaserHitEvent>,
         tiles: Query<(Entity, &Position, &T)>,
     ) {
-        for event in collisions.read() {
-            if let Ok((entity, _position, tile)) = tiles.get(event.consumer) {
-                if let Some(command) = tile.on_hit(entity) {
+        for LaserHitEvent { strength, consumer } in collisions.read() {
+            if let Ok((entity, _position, tile)) = tiles.get(*consumer) {
+                if let Some(command) = tile.on_hit(entity, *strength) {
                     commands.add(command);
                 }
             }
@@ -62,7 +62,7 @@ impl TileSystemSet {
         activated_query: Query<(Entity, &Position, &T)>,
     ) {
         for (entity, position, tile) in &activated_query {
-            commands.add(tile.activate(entity, position))
+            commands.add(tile.activate(entity, *position))
         }
     }
 }
