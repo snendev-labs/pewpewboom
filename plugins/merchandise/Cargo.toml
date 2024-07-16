@@ -1,0 +1,12 @@
+[package]
+name = "merchandise"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# plugins
+# bevy
+bevy = { workspace = true }
+bevy_anyhow_alert = { workspace = true }
+# stdx
+thiserror = { workspace = true }

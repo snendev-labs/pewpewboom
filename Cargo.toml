@@ -5,6 +5,7 @@ resolver = "2"
 [workspace.dependencies]
 # plugins
 lasers = { path = "plugins/lasers"}
+merchandise = { path = "plugins/merchandise" }
 tiles = { path = "plugins/tiles" }
 
 # bevy
