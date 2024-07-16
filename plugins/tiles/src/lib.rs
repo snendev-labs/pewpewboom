@@ -1,16 +1,31 @@
+use std::marker::PhantomData;
+
 use bevy::{ecs::world::Command, prelude::*};
 
 use lasers::{LaserHitEvent, Position};
 
-pub struct TilesPlugin;
+pub struct TilePlugin<T> {
+    marker: PhantomData<T>,
+}
 
-impl Plugin for TilesPlugin {
+impl<T> Default for TilePlugin<T> {
+    fn default() -> Self {
+        TilePlugin {
+            marker: PhantomData::<T>,
+        }
+    }
+}
+
+impl<T> Plugin for TilePlugin<T>
+where
+    T: Tile + Component + Send + Sync + 'static,
+{
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
             (
-                TileSystemSet::activate_tiles,
-                TileSystemSet::handle_hit_tiles,
+                TileSystemSet::activate_tiles::<T>,
+                TileSystemSet::handle_hit_tiles::<T>,
             )
                 .in_set(TileSystemSet),
         );
@@ -33,8 +48,8 @@ impl TileSystemSet {
         mut collisions: EventReader<LaserHitEvent>,
         tiles: Query<(Entity, &Position, &T)>,
     ) {
-        for event in collisions {
-            if let Ok((entity, position, tile)) = tiles.get(event.consumer) {
+        for event in collisions.read() {
+            if let Ok((entity, _position, tile)) = tiles.get(event.consumer) {
                 if let Some(command) = tile.on_hit(entity) {
                     commands.add(command);
                 }
@@ -50,10 +65,4 @@ impl TileSystemSet {
             commands.add(tile.activate(entity, position))
         }
     }
-}
-
-pub trait TilesAppExt {
-    fn handle_hit_tiles<T: Tile + Component>(&self) {}
-
-    fn activate_tiles<T: Tile + Component>(&self) {}
 }
