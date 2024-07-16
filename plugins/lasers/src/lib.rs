@@ -6,7 +6,7 @@ pub struct LaserPlugin;
 impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LaserHitEvent>()
-            .add_systems(Update, Self::track_lasers);
+            .add_systems(Update, Self::track_lasers.in_set(LaserSystems));
     }
 }
 
@@ -63,15 +63,15 @@ impl LaserPlugin {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(SystemSet)]
+pub struct LaserSystems;
+
 #[derive(Event)]
 pub struct LaserHitEvent {
     pub strength: usize,
     pub consumer: Entity,
 }
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[derive(SystemSet)]
-pub struct LaserSystems;
 
 #[derive(Clone, Copy, Debug)]
 #[derive(PartialEq, Eq)]
