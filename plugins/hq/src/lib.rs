@@ -1,8 +1,10 @@
 use bevy::{ecs::world::Command, prelude::*};
 
 use health::Health;
-use lasers::{Consumption, Position};
-use tiles::Tile;
+use tiles::{
+    lasers::{Consumption, Position},
+    Tile,
+};
 pub struct HQPlugin;
 
 impl Plugin for HQPlugin {
