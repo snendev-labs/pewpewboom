@@ -204,9 +204,9 @@ dependencies = [
 
 [[package]]
 name = "async-executor"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8828ec6e544c02b0d6691d21ed9f9218d0384a82542855073c2a3f58304aaf0"
+checksum = "d7ebdfa2ebdab6b1760375fa7d6f382b9f486eac35fc994625a00e89280bdbb7"
 dependencies = [
  "async-task",
  "concurrent-queue",
@@ -1475,6 +1475,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "game_loop"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1776,6 +1783,14 @@ name = "khronos_api"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
+
+[[package]]
+name = "laser-tower"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "tiles",
+]
 
 [[package]]
 name = "lasers"
@@ -2752,6 +2767,7 @@ name = "tiles"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "lasers",
 ]
 

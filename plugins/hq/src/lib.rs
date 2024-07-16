@@ -2,7 +2,7 @@ use bevy::{ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Position},
+    lasers::{Consumption, Direction, Position},
     Tile,
 };
 pub struct HQPlugin;
@@ -14,8 +14,16 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn activate(&self, entity: Entity, position: Position) -> impl Command {
-        HQActivate { entity, position }
+    fn activate(
+        &self,
+        entity: Entity,
+        position: &Position,
+        _direction: &Direction,
+    ) -> impl Command {
+        HQActivate {
+            entity,
+            position: *position,
+        }
     }
 
     fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command> {
@@ -30,12 +38,7 @@ pub struct HQActivate {
 
 impl Command for HQActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((
-            Consumption {
-                target: self.entity,
-            },
-            self.position,
-        ));
+        world.spawn((Consumption::new(self.entity), self.position));
     }
 }
 
