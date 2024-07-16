@@ -24,6 +24,7 @@ impl LaserPlugin {
             Or<(With<Refraction>, With<Amplification>, With<Consumption>)>,
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
+        mut laser_path_events: EventWriter<LaserPathEvent>,
     ) {
         'lasers: for (laser_position, laser_direction) in &lasers {
             const LASER_RANGE: usize = 100;
@@ -54,11 +55,13 @@ impl LaserPlugin {
                             consumer: collider,
                             strength,
                         });
+                        laser_path_events.send(LaserPathEvent { path });
                         break 'lasers;
                     }
                 }
                 current_position = next_position;
             }
+            laser_path_events.send(LaserPathEvent { path });
         }
     }
 }
@@ -71,6 +74,11 @@ pub struct LaserSystems;
 pub struct LaserHitEvent {
     pub strength: usize,
     pub consumer: Entity,
+}
+
+#[derive(Event)]
+pub struct LaserPathEvent {
+    pub path: Vec<Position>,
 }
 
 #[derive(Clone, Copy, Debug)]
