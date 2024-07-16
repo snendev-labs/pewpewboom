@@ -11,7 +11,7 @@ pub trait Tile {
     fn activate(&self, entity: Entity, position: &Position, direction: &Direction) -> impl Command;
 
     #[allow(unused_variables)]
-    fn on_hit(&self, entity: Entity) -> Option<impl Command> {
+    fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command> {
         None as Option<fn(&mut World)>
     }
 }
@@ -94,9 +94,9 @@ where
         mut collisions: EventReader<LaserHitEvent>,
         tiles: Query<(Entity, &Position, &T)>,
     ) {
-        for event in collisions.read() {
-            if let Ok((entity, _position, tile)) = tiles.get(event.consumer) {
-                if let Some(command) = tile.on_hit(entity) {
+        for LaserHitEvent { strength, consumer } in collisions.read() {
+            if let Ok((entity, _position, tile)) = tiles.get(*consumer) {
+                if let Some(command) = tile.on_hit(entity, *strength) {
                     commands.add(command);
                 }
             }

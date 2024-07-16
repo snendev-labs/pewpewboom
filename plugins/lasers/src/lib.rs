@@ -137,7 +137,6 @@ pub struct Amplification(usize);
 
 #[derive(Clone, Copy, Debug)]
 #[derive(Component, Reflect, Deref, DerefMut)]
-
 pub struct Consumption(Entity);
 
 impl Consumption {
