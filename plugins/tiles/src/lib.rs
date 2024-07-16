@@ -2,14 +2,17 @@ use std::marker::PhantomData;
 
 use bevy::{ecs::world::Command, prelude::*};
 
-use lasers::{LaserHitEvent, LaserPlugin, LaserSystems, Position};
+use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position};
 
 pub use lasers;
 
 pub trait Tile {
-    fn activate(&self, entity: Entity, position: &Position) -> impl Command;
+    fn activate(&self, entity: Entity, position: &Position, direction: &Direction) -> impl Command;
 
-    fn on_hit(&self, entity: Entity) -> Option<impl Command>;
+    #[allow(unused_variables)]
+    fn on_hit(&self, entity: Entity) -> Option<impl Command> {
+        None as Option<fn(&mut World)>
+    }
 }
 
 pub struct TilesPlugin;
@@ -68,9 +71,12 @@ where
         }
     }
 
-    fn activate_tiles(mut commands: Commands, activated_query: Query<(Entity, &Position, &T)>) {
-        for (entity, position, tile) in &activated_query {
-            commands.add(tile.activate(entity, position))
+    fn activate_tiles(
+        mut commands: Commands,
+        activated_query: Query<(Entity, &T, &Position, &Direction)>,
+    ) {
+        for (entity, tile, position, direction) in &activated_query {
+            commands.add(tile.activate(entity, position, direction))
         }
     }
 }
