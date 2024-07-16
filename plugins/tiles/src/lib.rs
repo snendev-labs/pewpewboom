@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use bevy::{ecs::world::Command, prelude::*};
 
-use lasers::{LaserHitEvent, LaserSystems, Position};
+use lasers::{LaserHitEvent, LaserPlugin, LaserSystems, Position};
 
 pub use lasers;
 
@@ -16,7 +16,7 @@ pub struct TilesPlugin;
 
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
-        app.configure_sets(
+        app.add_plugins(LaserPlugin).configure_sets(
             Update,
             (TileSystems::Activate, LaserSystems, TileSystems::OnHit).chain(),
         );
