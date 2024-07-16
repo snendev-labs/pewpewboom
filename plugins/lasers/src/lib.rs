@@ -6,7 +6,7 @@ pub struct LaserPlugin;
 impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LaserHitEvent>()
-            .add_systems(Update, Self::track_lasers);
+            .add_systems(Update, Self::track_lasers.in_set(LaserSystems));
     }
 }
 
@@ -24,6 +24,7 @@ impl LaserPlugin {
             Or<(With<Refraction>, With<Amplification>, With<Consumption>)>,
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
+        mut laser_path_events: EventWriter<LaserPathEvent>,
     ) {
         'lasers: for (laser_position, laser_direction) in &lasers {
             const LASER_RANGE: usize = 100;
@@ -54,14 +55,20 @@ impl LaserPlugin {
                             consumer: collider,
                             strength,
                         });
+                        laser_path_events.send(LaserPathEvent { path });
                         break 'lasers;
                     }
                 }
                 current_position = next_position;
             }
+            laser_path_events.send(LaserPathEvent { path });
         }
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(SystemSet)]
+pub struct LaserSystems;
 
 #[derive(Event)]
 pub struct LaserHitEvent {
@@ -69,9 +76,10 @@ pub struct LaserHitEvent {
     pub consumer: Entity,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[derive(SystemSet)]
-pub struct LaserSystems;
+#[derive(Event)]
+pub struct LaserPathEvent {
+    pub path: Vec<Position>,
+}
 
 #[derive(Clone, Copy, Debug)]
 #[derive(PartialEq, Eq)]

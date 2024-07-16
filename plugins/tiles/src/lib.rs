@@ -2,7 +2,26 @@ use std::marker::PhantomData;
 
 use bevy::{ecs::world::Command, prelude::*};
 
-use lasers::{LaserHitEvent, Position};
+use lasers::{LaserHitEvent, LaserPlugin, LaserSystems, Position};
+
+pub use lasers;
+
+pub trait Tile {
+    fn activate(&self, entity: Entity, position: Position) -> impl Command;
+
+    fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command>;
+}
+
+pub struct TilesPlugin;
+
+impl Plugin for TilesPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(LaserPlugin).configure_sets(
+            Update,
+            (TileSystems::Activate, LaserSystems, TileSystems::OnHit).chain(),
+        );
+    }
+}
 
 pub struct TilePlugin<T> {
     marker: PhantomData<T>,
@@ -24,26 +43,18 @@ where
         app.add_systems(
             Update,
             (
-                TileSystemSet::activate_tiles::<T>,
-                TileSystemSet::handle_hit_tiles::<T>,
-            )
-                .in_set(TileSystemSet),
+                Self::activate_tiles.in_set(TileSystems::Activate),
+                Self::handle_hit_tiles.in_set(TileSystems::OnHit),
+            ),
         );
     }
 }
 
-pub trait Tile {
-    fn activate(&self, entity: Entity, position: Position) -> impl Command;
-
-    fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command>;
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[derive(SystemSet)]
-pub struct TileSystemSet;
-
-impl TileSystemSet {
-    fn handle_hit_tiles<T: Tile + Component>(
+impl<T> TilePlugin<T>
+where
+    T: Tile + Component,
+{
+    fn handle_hit_tiles(
         mut commands: Commands,
         mut collisions: EventReader<LaserHitEvent>,
         tiles: Query<(Entity, &Position, &T)>,
@@ -57,12 +68,16 @@ impl TileSystemSet {
         }
     }
 
-    fn activate_tiles<T: Tile + Component>(
-        mut commands: Commands,
-        activated_query: Query<(Entity, &Position, &T)>,
-    ) {
+    fn activate_tiles(mut commands: Commands, activated_query: Query<(Entity, &Position, &T)>) {
         for (entity, position, tile) in &activated_query {
             commands.add(tile.activate(entity, *position))
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(SystemSet)]
+pub enum TileSystems {
+    Activate,
+    OnHit,
 }
