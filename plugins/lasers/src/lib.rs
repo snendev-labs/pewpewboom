@@ -5,9 +5,7 @@ pub struct LaserPlugin;
 
 impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<RefractionEvent>()
-            .add_event::<AmplificationEvent>()
-            .add_event::<ConsumptionEvent>()
+        app.add_event::<LaserHitEvent>()
             .add_systems(Update, Self::track_lasers);
     }
 }
@@ -15,80 +13,59 @@ impl Plugin for LaserPlugin {
 impl LaserPlugin {
     fn track_lasers(
         lasers: Query<(&Position, &Direction), With<Laser>>,
-        colliders: Query<(
-            Entity,
-            &Position,
-            Option<&Refraction>,
-            Option<&Amplification>,
-            Option<&Consumption>,
-        )>,
-        mut refraction_events: EventWriter<RefractionEvent>,
-        mut amplification_events: EventWriter<AmplificationEvent>,
-        mut consumption_events: EventWriter<ConsumptionEvent>,
+        colliders: Query<
+            (
+                Entity,
+                &Position,
+                Option<&Refraction>,
+                Option<&Amplification>,
+                Option<&Consumption>,
+            ),
+            Or<(With<Refraction>, With<Amplification>, With<Consumption>)>,
+        >,
+        mut laser_hit_events: EventWriter<LaserHitEvent>,
     ) {
-        for (laser_position, laser_direction) in &lasers {
-            let mut hits = Vec::new();
-            let mut current_source = *laser_position;
-            let mut current_direction = *laser_direction;
-            'outer: while !hits.contains(&current_source) {
-                hits.push(current_source);
-                let mut steps = 0;
-                let next_neighbor: Position =
-                    current_source.neighbor(current_direction.to_hex()).into();
-                while steps < 100 {
-                    for (
-                        collider_entity,
-                        position,
-                        option_refraction,
-                        option_amplification,
-                        option_consumption,
-                    ) in &colliders
-                    {
-                        if *position == next_neighbor {
-                            if let Some(consumption) = option_consumption {
-                                consumption_events.send(ConsumptionEvent {
-                                    consumer: collider_entity,
-                                });
-                                return;
-                            }
-                            if let Some(refraction) = option_refraction {
-                                refraction_events.send(RefractionEvent {
-                                    refractor: collider_entity,
-                                });
-                                current_source = *position;
-                                current_direction = refraction.new_direction;
-                                break 'outer;
-                            }
-                            if let Some(amplification) = option_amplification {
-                                amplification_events.send(AmplificationEvent {
-                                    amplifier: collider_entity,
-                                });
-                                current_source = *position;
-                                break 'outer;
-                            }
-                        }
-                    }
-                    steps += 1
-                }
+        'lasers: for (laser_position, laser_direction) in &lasers {
+            const LASER_RANGE: usize = 100;
+            const BASE_LASER_STRENGTH: usize = 1;
 
-                return;
+            let mut path = Vec::new();
+            let mut current_position = *laser_position;
+            let mut current_direction = *laser_direction;
+            let mut strength = BASE_LASER_STRENGTH;
+
+            for _ in 0..LASER_RANGE {
+                let next_position: Position =
+                    current_position.neighbor(current_direction.to_hex()).into();
+                path.push(next_position);
+
+                if let Some((collider, _, refraction, amplification, consumption)) = colliders
+                    .iter()
+                    .find(|(_, position, _, _, _)| **position == next_position)
+                {
+                    if let Some(refraction) = refraction {
+                        current_direction = refraction.new_direction;
+                    }
+                    if let Some(amplification) = amplification {
+                        strength += **amplification;
+                    }
+                    if consumption.is_some() {
+                        laser_hit_events.send(LaserHitEvent {
+                            consumer: collider,
+                            strength,
+                        });
+                        break 'lasers;
+                    }
+                }
+                current_position = next_position;
             }
         }
     }
 }
 
 #[derive(Event)]
-pub struct RefractionEvent {
-    pub refractor: Entity,
-}
-
-#[derive(Event)]
-pub struct AmplificationEvent {
-    pub amplifier: Entity,
-}
-
-#[derive(Event)]
-pub struct ConsumptionEvent {
+pub struct LaserHitEvent {
+    pub strength: usize,
     pub consumer: Entity,
 }
 
@@ -104,20 +81,6 @@ pub struct Position(Hex);
 impl From<Hex> for Position {
     fn from(value: Hex) -> Self {
         Self(value)
-    }
-}
-
-impl Position {
-    pub fn ray(self, direction: &Direction, limit: u32) -> Vec<Position> {
-        let mut ray = Vec::new();
-        let mut steps = 1;
-        let mut next_neighbor = self;
-        while steps < limit {
-            next_neighbor = next_neighbor.neighbor(direction.to_hex()).into();
-            ray.push(next_neighbor);
-            steps += 1;
-        }
-        ray
     }
 }
 
