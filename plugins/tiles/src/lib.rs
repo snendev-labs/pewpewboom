@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use bevy::{ecs::world::Command, prelude::*};
 
+use game_loop::{GamePhase, InGame};
 use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position};
 
 pub use lasers;
@@ -57,6 +58,37 @@ impl<T> TilePlugin<T>
 where
     T: Tile + Component,
 {
+    fn activate_tiles(
+        mut commands: Commands,
+        activated_games: Query<(Entity, &GamePhase), Changed<GamePhase>>,
+        activated_tiles: Query<(Entity, &Position, &Direction, &T, &InGame)>,
+    ) {
+        let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
+        for (game, phase) in activated_games.iter().sort::<Entity>() {
+            if *phase != GamePhase::Act {
+                continue;
+            }
+
+            let (entity, position, direction, tile, _) = sorted_tiles
+                .find(|(_, _, _, _, in_game)| ***in_game == game)
+                .expect(
+                    format!("failed to find tiles for game {:?}! invalid sort?", game).as_str(),
+                );
+            info!("Found tiles for game {:?}", game);
+            info!("Processing entity {:?} in game {:?}", entity, game);
+            commands.add(tile.activate(entity, position, direction));
+
+            while sorted_tiles
+                .peek()
+                .is_some_and(|(_, _, _, _, in_game)| ***in_game == game)
+            {
+                let (entity, position, direction, tile, _) = sorted_tiles.next().unwrap();
+                info!("Processing entity {:?} in game {:?}", entity, game);
+                commands.add(tile.activate(entity, position, direction));
+            }
+        }
+    }
+
     fn handle_hit_tiles(
         mut commands: Commands,
         mut collisions: EventReader<LaserHitEvent>,
@@ -68,15 +100,6 @@ where
                     commands.add(command);
                 }
             }
-        }
-    }
-
-    fn activate_tiles(
-        mut commands: Commands,
-        activated_query: Query<(Entity, &T, &Position, &Direction)>,
-    ) {
-        for (entity, tile, position, direction) in &activated_query {
-            commands.add(tile.activate(entity, position, direction))
         }
     }
 }

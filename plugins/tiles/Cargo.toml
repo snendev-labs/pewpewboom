@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 lasers = { workspace = true }
+game_loop = { workspace = true }
