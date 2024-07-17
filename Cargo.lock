@@ -745,7 +745,7 @@ dependencies = [
 [[package]]
 name = "bevy_rts_camera"
 version = "0.8.1"
-source = "git+https://github.com/snendev/bevy_rts_camera_2d#50c7c45ea3e3e45688ecce9690f1ba4b4441894c"
+source = "git+https://github.com/snendev/bevy_rts_camera_2d#6a12d0576bd61e4a88d39d6a3558e5e8923d725d"
 dependencies = [
  "bevy",
  "bevy_mod_raycast",
