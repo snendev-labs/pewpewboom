@@ -20,7 +20,7 @@ impl Money {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct MerchId(usize);
 
@@ -29,15 +29,20 @@ pub struct MerchId(usize);
 pub struct Merch {
     id: MerchId,
     price: Money,
+    name: &'static str,
 }
 
 impl Merch {
-    pub const fn new(id: MerchId, price: Money) -> Self {
-        Merch { id, price }
+    pub const fn new(id: MerchId, name: &'static str, price: Money) -> Self {
+        Merch { id, name, price }
     }
 
     pub fn id(&self) -> MerchId {
         self.id
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
     }
 
     pub fn price(&self) -> Money {

@@ -83,6 +83,7 @@ pub enum PurchaseError {
 
 pub trait Merchandise {
     const PRICE: Money;
+    const NAME: &'static str;
 }
 
 pub trait MerchAppExt {

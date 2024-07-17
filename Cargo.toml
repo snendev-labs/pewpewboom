@@ -41,12 +41,14 @@ edition = "2021"
 
 [dependencies]
 # plugins
+amplifier = { workspace = true }
 camera = { workspace = true }
 game_loop = { workspace = true }
 health = { workspace = true }
 hq = { workspace = true }
 laser_tower = { workspace = true }
 merchandise = { workspace = true }
+refractor = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }
 tiles = { workspace = true }

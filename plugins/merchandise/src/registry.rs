@@ -23,7 +23,11 @@ impl MerchRegistry {
     {
         let merch_id = self.next_id;
         let type_id = T::get_type_registration().type_id();
-        let merch = Merch::new(merch_id, <T as Merchandise>::PRICE);
+        let merch = Merch::new(
+            merch_id,
+            <T as Merchandise>::NAME,
+            <T as Merchandise>::PRICE,
+        );
         let replaced_merch = self.by_type.insert(type_id, merch.clone());
         let replaced_type = self.by_id.insert(merch_id, (type_id, merch.clone()));
         *self.next_id += 1;
@@ -44,5 +48,11 @@ impl MerchRegistry {
 
     pub fn iter(&self) -> impl Iterator<Item = (&TypeId, &Merch)> {
         self.by_type.iter()
+    }
+
+    pub fn sorted(&self) -> Vec<(&TypeId, &Merch)> {
+        let mut sorted = self.by_type.iter().collect::<Vec<_>>();
+        sorted.sort_by(|(_, merch1), (_, merch2)| merch1.id().cmp(&merch2.id()));
+        sorted
     }
 }

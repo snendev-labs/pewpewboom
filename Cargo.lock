@@ -2153,7 +2153,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "health",
- "merchandise",
  "tiles",
 ]
 
@@ -3016,6 +3015,7 @@ dependencies = [
 name = "pewpewboom"
 version = "0.1.0"
 dependencies = [
+ "amplifier",
  "bevy",
  "camera",
  "game_loop",
@@ -3023,6 +3023,7 @@ dependencies = [
  "hq",
  "laser_tower",
  "merchandise",
+ "refractor",
  "shop",
  "tilemap",
  "tiles",

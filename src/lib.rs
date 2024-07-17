@@ -1,11 +1,13 @@
 use bevy::{app::PluginGroupBuilder, prelude::*};
 
+pub use amplifier;
 pub use camera;
 pub use game_loop;
 pub use health;
 pub use hq;
 pub use laser_tower;
 pub use merchandise;
+pub use refractor;
 pub use tilemap;
 pub use tiles;
 
@@ -31,5 +33,7 @@ impl PluginGroup for PewPewBoomBuildingsPlugins {
         PluginGroupBuilder::start::<Self>()
             .add(hq::HQPlugin)
             .add(laser_tower::LaserTowerPlugin)
+            .add(amplifier::AmplifierPlugin)
+            .add(refractor::RefractorPlugin)
     }
 }

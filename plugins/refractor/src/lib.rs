@@ -1,6 +1,6 @@
 use bevy::{ecs::world::Command, prelude::*};
 
-use merchandise::{Merchandise, Money};
+use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Direction, Position, Refraction},
     Tile, TilePlugin,
@@ -11,6 +11,7 @@ pub struct RefractorPlugin;
 impl Plugin for RefractorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TilePlugin::<RefractorTile>::default());
+        app.define_merchandise::<RefractorTile>();
     }
 }
 
@@ -20,6 +21,7 @@ pub struct RefractorTile;
 
 impl Merchandise for RefractorTile {
     const PRICE: Money = Money::new(5);
+    const NAME: &'static str = "Refractor Tower";
 }
 
 impl Tile for RefractorTile {
