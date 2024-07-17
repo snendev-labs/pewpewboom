@@ -36,7 +36,7 @@ impl Plugin for TilemapPlugin {
 
 impl TilemapPlugin {
     /// World size of the hexagons (outer radius)
-    const HEX_SIZE: Vec2 = Vec2::splat(30.0);
+    const HEX_SIZE: Vec2 = Vec2::splat(60.0);
 
     fn spawn_tilemaps(
         mut commands: Commands,
@@ -68,12 +68,12 @@ impl TilemapPlugin {
                             text: Text::from_section(
                                 format!("{},{}", coord.x, coord.y),
                                 TextStyle {
-                                    font_size: 7.0,
-                                    color: Color::BLACK,
+                                    font_size: 16.0,
+                                    color: Color::Srgba(palettes::css::LIGHT_SLATE_GRAY),
                                     ..Default::default()
                                 },
                             ),
-                            transform: Transform::from_xyz(0.0, 0.0, 10.0),
+                            transform: Transform::from_xyz(10.0, 35.0, 10.0),
                             ..Default::default()
                         });
                     })
@@ -98,8 +98,12 @@ impl TilemapPlugin {
         tilemaps: Query<(Entity, &TilemapLayout, &TilemapData)>,
         targeted_tile: Option<ResMut<TargetedTile>>,
     ) {
-        let window = windows.single();
-        let (camera, camera_transform) = cameras.single();
+        let Ok(window) = windows.get_single() else {
+            return;
+        };
+        let Ok((camera, camera_transform)) = cameras.get_single() else {
+            return;
+        };
         let Ok((tilemap, layout, data)) = tilemaps.get_single() else {
             return;
         };

@@ -1,5 +1,6 @@
 use bevy::{app::PluginGroupBuilder, prelude::*};
 
+pub use camera;
 pub use game_loop;
 pub use health;
 pub use hq;
@@ -8,25 +9,18 @@ pub use merchandise;
 pub use tilemap;
 pub use tiles;
 
-use game_loop::GameLoopPlugin;
-use health::HealthPlugin;
-use hq::HQPlugin;
-use laser_tower::LaserTowerPlugin;
-use merchandise::MerchPlugin;
-use tilemap::TilemapPlugin;
-use tiles::TilesPlugin;
-
 pub struct PewPewBoomPlugins;
 
 impl PluginGroup for PewPewBoomPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(GameLoopPlugin)
-            .add(TilesPlugin)
-            .add(MerchPlugin)
-            .add(HealthPlugin)
-            .add(HQPlugin)
-            .add(LaserTowerPlugin)
-            .add(TilemapPlugin)
+            .add(game_loop::GameLoopPlugin)
+            .add(tiles::TilesPlugin)
+            .add(merchandise::MerchPlugin)
+            .add(health::HealthPlugin)
+            .add(hq::HQPlugin)
+            .add(laser_tower::LaserTowerPlugin)
+            .add(tilemap::TilemapPlugin)
+            .add(camera::CameraPlugin)
     }
 }

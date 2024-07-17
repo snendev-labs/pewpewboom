@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App, Camera2dBundle, Commands, Startup},
+    prelude::{App, Commands, Startup},
     DefaultPlugins,
 };
 
@@ -14,6 +14,6 @@ fn main() {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(pewpewboom::camera::PlayerCamera);
     commands.spawn(Tilemap::bundle());
 }
