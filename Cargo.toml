@@ -4,19 +4,22 @@ resolver = "2"
 
 [workspace.dependencies]
 # plugins
+camera = { path = "plugins/camera" }
 game_loop = { path = "plugins/game-loop" }
 health = { path = "plugins/health" }
 hq = { path = "plugins/hq" }
 lasers = { path = "plugins/lasers" }
 laser_tower = { path = "plugins/laser-tower" }
 merchandise = { path = "plugins/merchandise" }
+tilemap = { path = "plugins/tilemap" }
 tiles = { path = "plugins/tiles" }
 
 # bevy
 bevy = { version = "0.14", default-features = false }
-bevy_rand = { version = "0.6", features = ["wyrand"] }
-bevy_prng = { version = "0.6", features = ["wyrand"] }
 bevy_anyhow_alert = "0.3"
+bevy_prng = { version = "0.6", features = ["wyrand"] }
+bevy_rand = { version = "0.6", features = ["wyrand"] }
+bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }
 hexx = { git = "https://github.com/ManevilleF/hexx", features = [
     "bevy_reflect",
 ], rev = "35bd74e703925d19160674f7cfe437ce70adec06" }
@@ -33,15 +36,16 @@ edition = "2021"
 
 [dependencies]
 # plugins
+camera = { workspace = true }
 game_loop = { workspace = true }
 health = { workspace = true }
 hq = { workspace = true }
 laser_tower = { workspace = true }
 merchandise = { workspace = true }
+tilemap = { workspace = true }
 tiles = { workspace = true }
 
 # bevy
-bevy = { workspace = true, default-features = true }
-hexx = { workspace = true }
+bevy = { workspace = true, features = ["bevy_winit"] }
 
 # stdx
