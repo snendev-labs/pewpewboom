@@ -1,0 +1,15 @@
+[package]
+name = "tilemap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { workspace = true, features = [
+    "bevy_asset",
+    "bevy_color",
+    "bevy_render",
+    "default_font",
+] }
+hexx = { workspace = true }

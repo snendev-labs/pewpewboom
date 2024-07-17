@@ -1,13 +1,18 @@
-use bevy::{
-    color::palettes,
-    prelude::*,
-    render::{
-        mesh::{Indices, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-    },
-    utils::HashMap,
-    window::PrimaryWindow,
+use bevy::color::palettes;
+use bevy::prelude::{
+    resource_added, resource_exists_and_changed, resource_removed, App, Assets, BuildChildren,
+    Bundle, Camera, Color, ColorMaterial, ColorMesh2dBundle, Commands, Component, Deref, DerefMut,
+    DespawnRecursiveExt, Entity, GlobalTransform, Handle, IntoSystemConfigs, Mesh, Name, Plugin,
+    Query, Reflect, Res, ResMut, Resource, SpatialBundle, SystemSet, Text, Text2dBundle, TextStyle,
+    Transform, Update, Vec3Swizzles, Window, With, Without,
 };
+use bevy::render::{
+    mesh::{Indices, PrimitiveTopology},
+    render_asset::RenderAssetUsages,
+};
+use bevy::utils::HashMap;
+use bevy::window::PrimaryWindow;
+
 use hexx::{shapes, *};
 
 pub struct TilemapPlugin;
@@ -31,7 +36,7 @@ impl Plugin for TilemapPlugin {
 
 impl TilemapPlugin {
     /// World size of the hexagons (outer radius)
-    const HEX_SIZE: Vec2 = Vec2::splat(30.0);
+    const HEX_SIZE: Vec2 = Vec2::splat(60.0);
 
     fn spawn_tilemaps(
         mut commands: Commands,
@@ -63,12 +68,12 @@ impl TilemapPlugin {
                             text: Text::from_section(
                                 format!("{},{}", coord.x, coord.y),
                                 TextStyle {
-                                    font_size: 7.0,
-                                    color: Color::BLACK,
+                                    font_size: 16.0,
+                                    color: Color::Srgba(palettes::css::LIGHT_SLATE_GRAY),
                                     ..Default::default()
                                 },
                             ),
-                            transform: Transform::from_xyz(0.0, 0.0, 10.0),
+                            transform: Transform::from_xyz(10.0, 35.0, 10.0),
                             ..Default::default()
                         });
                     })
@@ -93,8 +98,12 @@ impl TilemapPlugin {
         tilemaps: Query<(Entity, &TilemapLayout, &TilemapData)>,
         targeted_tile: Option<ResMut<TargetedTile>>,
     ) {
-        let window = windows.single();
-        let (camera, camera_transform) = cameras.single();
+        let Ok(window) = windows.get_single() else {
+            return;
+        };
+        let Ok((camera, camera_transform)) = cameras.get_single() else {
+            return;
+        };
         let Ok((tilemap, layout, data)) = tilemaps.get_single() else {
             return;
         };
@@ -117,10 +126,8 @@ impl TilemapPlugin {
                     tilemap,
                 });
             }
-        } else {
-            if targeted_tile.is_some() {
-                commands.remove_resource::<TargetedTile>();
-            }
+        } else if targeted_tile.is_some() {
+            commands.remove_resource::<TargetedTile>();
         }
     }
 
@@ -138,7 +145,7 @@ impl TilemapPlugin {
         let Ok(position) = tiles.get(targeted_tile.tile) else {
             return;
         };
-        let cursor_mesh = meshes.add(CursorHex::mesh(&layout));
+        let cursor_mesh = meshes.add(CursorHex::mesh(layout));
         let cursor_material = materials.add(CursorHex::material());
         let cursor = commands
             .spawn(TileBundle::new(
@@ -152,6 +159,7 @@ impl TilemapPlugin {
         commands.entity(entity).insert(TilemapCursor(cursor));
     }
 
+    #[allow(clippy::type_complexity)]
     fn update_targeted_tile(
         mut commands: Commands,
         mut cursors: Query<(Entity, &mut Transform), With<CursorHex>>,

@@ -23,8 +23,8 @@ impl Tile for LaserTower {
     fn activate(&self, tile: Entity, position: &Position, direction: &Direction) -> impl Command {
         LaserTowerActivate {
             tile,
-            position: position.clone(),
-            direction: direction.clone(),
+            position: *position,
+            direction: *direction,
         }
     }
 }
@@ -42,8 +42,8 @@ pub struct LaserTowerActivate {
 
 impl Command for LaserTowerActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Consumption::new(self.tile), self.position.clone()));
-        world.spawn((Laser, self.position.clone(), self.direction.clone()));
+        world.spawn((Consumption::new(self.tile), self.position));
+        world.spawn((Laser, self.position, self.direction));
     }
 }
 

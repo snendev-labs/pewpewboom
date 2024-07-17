@@ -10,7 +10,7 @@ pub struct Money(usize);
 
 impl std::fmt::Display for Money {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "${}", *self)
+        write!(f, "${}", **self)
     }
 }
 
@@ -24,7 +24,7 @@ impl Money {
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct MerchId(usize);
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 #[derive(Component, Reflect)]
 pub struct Merch {
     id: MerchId,

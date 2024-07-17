@@ -12,6 +12,7 @@ impl Plugin for LaserPlugin {
 }
 
 impl LaserPlugin {
+    #[allow(clippy::type_complexity)]
     fn track_lasers(
         lasers: Query<(&Position, &Direction, &Shooter), With<Laser>>,
         colliders: Query<
@@ -38,7 +39,7 @@ impl LaserPlugin {
 
             for _ in 0..LASER_RANGE {
                 let next_position: Position =
-                    current_position.neighbor(current_direction.to_hex()).into();
+                    current_position.neighbor(current_direction.as_hex()).into();
                 path.push(next_position);
 
                 if let Some((collider, _, refraction, amplification, consumption)) = colliders
@@ -113,7 +114,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn to_hex(&self) -> EdgeDirection {
+    fn as_hex(&self) -> EdgeDirection {
         match self {
             Self::North => EdgeDirection::FLAT_NORTH,
             Self::South => EdgeDirection::FLAT_SOUTH,
