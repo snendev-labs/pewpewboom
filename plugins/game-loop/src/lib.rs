@@ -4,7 +4,7 @@ pub struct GameLoopPlugin;
 
 impl Plugin for GameLoopPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_event::<ActionsCompleteEvent>().add_systems(
             Update,
             (
                 Self::spawn_players,

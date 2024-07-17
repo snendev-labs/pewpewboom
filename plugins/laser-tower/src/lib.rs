@@ -1,5 +1,6 @@
 use bevy::{ecs::world::Command, prelude::*};
 
+use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Consumption, Direction, Laser, Position},
     Tile, TilePlugin,
@@ -10,6 +11,7 @@ pub struct LaserTowerPlugin;
 impl Plugin for LaserTowerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TilePlugin::<LaserTower>::default());
+        app.define_merchandise::<LaserTower>();
     }
 }
 
@@ -25,6 +27,10 @@ impl Tile for LaserTower {
             direction: direction.clone(),
         }
     }
+}
+
+impl Merchandise for LaserTower {
+    const PRICE: Money = Money::new(10);
 }
 
 #[derive(Clone, Debug)]
@@ -43,12 +49,12 @@ impl Command for LaserTowerActivate {
 
 #[derive(Clone, Debug)]
 pub struct LaserTowerOnHit {
-    entity: Entity,
+    _entity: Entity,
     // strength: Entity,
 }
 
 impl Command for LaserTowerOnHit {
-    fn apply(self, world: &mut World) {
+    fn apply(self, _world: &mut World) {
         // world
         // .get_mut::<Health>()
         // .expect("Laser tower to have Health");

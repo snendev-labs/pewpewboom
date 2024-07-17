@@ -1,5 +1,5 @@
 [package]
-name = "laser-tower"
+name = "laser_tower"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
+merchandise = { workspace = true }
 tiles = { workspace = true }
