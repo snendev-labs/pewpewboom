@@ -25,7 +25,7 @@ impl MerchRegistry {
         let type_id = T::get_type_registration().type_id();
         let merch = Merch::new(merch_id, <T as Merchandise>::PRICE);
         let replaced_merch = self.by_type.insert(type_id, merch.clone());
-        let replaced_type = self.by_id.insert(merch_id, (type_id, merch));
+        let replaced_type = self.by_id.insert(merch_id, (type_id, merch.clone()));
         *self.next_id += 1;
         if let Some(merch) = replaced_merch.or(replaced_type.map(|(_, merch)| merch)) {
             Err(merch)
@@ -42,7 +42,7 @@ impl MerchRegistry {
         self.by_id.get(merch).map(|(id, _)| id)
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (&'a TypeId, &'a Merch)> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = (&TypeId, &Merch)> {
         self.by_type.iter()
     }
 }

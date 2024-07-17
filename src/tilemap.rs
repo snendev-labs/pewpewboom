@@ -117,10 +117,8 @@ impl TilemapPlugin {
                     tilemap,
                 });
             }
-        } else {
-            if targeted_tile.is_some() {
-                commands.remove_resource::<TargetedTile>();
-            }
+        } else if targeted_tile.is_some() {
+            commands.remove_resource::<TargetedTile>();
         }
     }
 
@@ -138,7 +136,7 @@ impl TilemapPlugin {
         let Ok(position) = tiles.get(targeted_tile.tile) else {
             return;
         };
-        let cursor_mesh = meshes.add(CursorHex::mesh(&layout));
+        let cursor_mesh = meshes.add(CursorHex::mesh(layout));
         let cursor_material = materials.add(CursorHex::material());
         let cursor = commands
             .spawn(TileBundle::new(
@@ -152,6 +150,7 @@ impl TilemapPlugin {
         commands.entity(entity).insert(TilemapCursor(cursor));
     }
 
+    #[allow(clippy::type_complexity)]
     fn update_targeted_tile(
         mut commands: Commands,
         mut cursors: Query<(Entity, &mut Transform), With<CursorHex>>,
