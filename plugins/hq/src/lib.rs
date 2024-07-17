@@ -8,7 +8,7 @@ use tiles::{
 pub struct HQPlugin;
 
 impl Plugin for HQPlugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, _app: &mut App) {}
 }
 
 pub struct HQTile;
