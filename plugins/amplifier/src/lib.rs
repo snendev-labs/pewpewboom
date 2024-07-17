@@ -1,7 +1,6 @@
 use bevy::{ecs::world::Command, prelude::*};
 
-use health::Health;
-use merchandise::{Merchandise, Money};
+use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Amplification, Direction, Position},
     Tile, TilePlugin,
@@ -12,6 +11,7 @@ pub struct AmplifierPlugin;
 impl Plugin for AmplifierPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(TilePlugin::<AmplifierTile>::default());
+        app.define_merchandise::<AmplifierTile>();
     }
 }
 
@@ -21,6 +21,7 @@ pub struct AmplifierTile;
 
 impl Merchandise for AmplifierTile {
     const PRICE: Money = Money::new(3);
+    const NAME: &'static str = "Amplifier Tower";
 }
 
 impl Tile for AmplifierTile {

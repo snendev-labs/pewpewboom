@@ -31,6 +31,7 @@ impl Tile for LaserTower {
 
 impl Merchandise for LaserTower {
     const PRICE: Money = Money::new(10);
+    const NAME: &'static str = "Laser Tower";
 }
 
 #[derive(Clone, Debug)]
