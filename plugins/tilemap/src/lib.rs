@@ -1,13 +1,18 @@
-use bevy::{
-    color::palettes,
-    prelude::*,
-    render::{
-        mesh::{Indices, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
-    },
-    utils::HashMap,
-    window::PrimaryWindow,
+use bevy::color::palettes;
+use bevy::prelude::{
+    resource_added, resource_exists_and_changed, resource_removed, App, Assets, BuildChildren,
+    Bundle, Camera, Color, ColorMaterial, ColorMesh2dBundle, Commands, Component, Deref, DerefMut,
+    DespawnRecursiveExt, Entity, GlobalTransform, Handle, IntoSystemConfigs, Mesh, Name, Plugin,
+    Query, Reflect, Res, ResMut, Resource, SpatialBundle, SystemSet, Text, Text2dBundle, TextStyle,
+    Transform, Update, Vec3Swizzles, Window, With, Without,
 };
+use bevy::render::{
+    mesh::{Indices, PrimitiveTopology},
+    render_asset::RenderAssetUsages,
+};
+use bevy::utils::HashMap;
+use bevy::window::PrimaryWindow;
+
 use hexx::{shapes, *};
 
 pub struct TilemapPlugin;

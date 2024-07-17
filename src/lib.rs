@@ -5,7 +5,7 @@ pub use health;
 pub use hq;
 pub use laser_tower;
 pub use merchandise;
-use tilemap::TilemapPlugin;
+pub use tilemap;
 pub use tiles;
 
 use game_loop::GameLoopPlugin;
@@ -13,9 +13,8 @@ use health::HealthPlugin;
 use hq::HQPlugin;
 use laser_tower::LaserTowerPlugin;
 use merchandise::MerchPlugin;
+use tilemap::TilemapPlugin;
 use tiles::TilesPlugin;
-
-pub mod tilemap;
 
 pub struct PewPewBoomPlugins;
 
