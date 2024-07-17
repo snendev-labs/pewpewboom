@@ -9,6 +9,9 @@ lasers = { path = "plugins/lasers" }
 merchandise = { path = "plugins/merchandise" }
 tiles = { path = "plugins/tiles" }
 health = { path = "plugins/health" }
+amplifier = { path = "plugins/amplifier" }
+refractor = { path = "plugins/refractor" }
+resource = { path = "plugins/resource" }
 
 # bevy
 bevy = { version = "0.14", default-features = false }

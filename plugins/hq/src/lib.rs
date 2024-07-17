@@ -3,14 +3,18 @@ use bevy::{ecs::world::Command, prelude::*};
 use health::Health;
 use tiles::{
     lasers::{Consumption, Direction, Position},
-    Tile,
+    Tile, TilePlugin,
 };
 pub struct HQPlugin;
 
 impl Plugin for HQPlugin {
-    fn build(&self, app: &mut App) {}
+    fn build(&self, app: &mut App) {
+        app.add_plugins(TilePlugin::<HQTile>::default());
+    }
 }
 
+#[derive(Debug)]
+#[derive(Component, Reflect)]
 pub struct HQTile;
 
 impl Tile for HQTile {
@@ -26,7 +30,7 @@ impl Tile for HQTile {
         }
     }
 
-    fn on_hit(&self, entity: Entity, strength: usize) -> Option<impl Command> {
+    fn on_hit(&self, entity: Entity, strength: usize, _shooter: Entity) -> Option<impl Command> {
         Some(HQOnHit { entity, strength })
     }
 }
@@ -51,7 +55,7 @@ impl Command for HQOnHit {
     fn apply(self, world: &mut World) {
         let mut consumer_health = world
             .get_mut::<Health>(self.entity)
-            .expect("HQOnHit command should be fired for entity with a halth component");
+            .expect("HQOnHit command should be fired for entity with a health component");
         **consumer_health -= self.strength;
     }
 }

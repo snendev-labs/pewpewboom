@@ -1,0 +1,9 @@
+[package]
+name = "refractor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+tiles = { workspace = true }
+merchandise = { workspace = true }

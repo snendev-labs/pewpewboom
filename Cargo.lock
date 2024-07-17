@@ -103,6 +103,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
+name = "amplifier"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "merchandise",
+ "tiles",
+]
+
+[[package]]
 name = "android-activity"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2504,6 +2513,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "refractor"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "merchandise",
+ "tiles",
+]
+
+[[package]]
 name = "regex"
 version = "1.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2552,6 +2570,16 @@ name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
+
+[[package]]
+name = "resource"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "merchandise",
+ "tiles",
+]
 
 [[package]]
 name = "ron"
