@@ -19,7 +19,7 @@ bevy_prng = { version = "0.6", features = ["wyrand"] }
 bevy_anyhow_alert = "0.3"
 hexx = { git = "https://github.com/ManevilleF/hexx", features = [
     "bevy_reflect",
-] }
+], rev = "35bd74e703925d19160674f7cfe437ce70adec06" }
 
 # stdx
 anyhow = "1.0"
