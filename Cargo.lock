@@ -103,6 +103,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
+name = "amplifier"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "merchandise",
+ "tiles",
+]
+
+[[package]]
 name = "android-activity"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -599,7 +609,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.71",
- "toml_edit 0.22.15",
+ "toml_edit 0.22.16",
 ]
 
 [[package]]
@@ -1079,9 +1089,9 @@ checksum = "a12916984aab3fa6e39d655a33e09c0071eb36d6ab3aea5c2d78551f1df6d952"
 
 [[package]]
 name = "calloop"
-version = "0.12.4"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fba7adb4dd5aa98e5553510223000e7148f621165ec5f9acd7113f6ca4995298"
+checksum = "b99da2f8558ca23c71f4fd15dc57c906239752dd27ff3c00a1d56b685b7cbfec"
 dependencies = [
  "bitflags 2.6.0",
  "log",
@@ -1955,6 +1965,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mountain"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "tiles",
+]
+
+[[package]]
 name = "naga"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2547,6 +2566,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "refractor"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "merchandise",
+ "tiles",
+]
+
+[[package]]
 name = "regex"
 version = "1.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2595,6 +2623,16 @@ name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
+
+[[package]]
+name = "resource"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "merchandise",
+ "tiles",
+]
 
 [[package]]
 name = "ron"
@@ -2777,18 +2815,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2675633b1499176c2dff06b0856a27976a8f9d436737b4cf4f312d4d91d8bbb"
+checksum = "c0342370b38b6a11b6cc11d6a805569958d54cfa061a29969c3b5ce2ea405724"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.62"
+version = "1.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d20468752b09f49e909e55a5d338caa8bedf615594e9d80bc4c565d30faf798c"
+checksum = "a4558b58466b9ad7ca0f102865eccc95938dca1a74a856f2b57b6629050da261"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2841,9 +2879,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.15"
+version = "0.22.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59a3a72298453f564e2b111fa896f8d07fabb36f51f06d7e875fc5e0b5a3ef1"
+checksum = "278f3d518e152219c994ce877758516bca5e118eaed6996192a774fb9fbf0788"
 dependencies = [
  "indexmap",
  "toml_datetime",
@@ -3441,9 +3479,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winit"
-version = "0.30.3"
+version = "0.30.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49f45a7b7e2de6af35448d7718dab6d95acec466eb3bb7a56f4d31d1af754004"
+checksum = "4225ddd8ab67b8b59a2fee4b34889ebf13c0460c1c3fa297c58e21eb87801b33"
 dependencies = [
  "android-activity",
  "atomic-waker",

@@ -5,60 +5,60 @@ use tiles::{
     lasers::{Consumption, Direction, Position},
     Tile, TilePlugin,
 };
-pub struct HQPlugin;
+pub struct MountainPlugin;
 
-impl Plugin for HQPlugin {
+impl Plugin for MountainPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<HQTile>::default());
+        app.add_plugins(TilePlugin::<MountainTile>::default());
     }
 }
 
 #[derive(Debug)]
 #[derive(Component, Reflect)]
-pub struct HQTile;
+pub struct MountainTile;
 
-impl Tile for HQTile {
+impl Tile for MountainTile {
     fn activate(
         &self,
         entity: Entity,
         position: &Position,
         _direction: &Direction,
     ) -> impl Command {
-        HQActivate {
+        MountainActivate {
             tile: entity,
             position: *position,
         }
     }
 
     fn on_hit(&self, entity: Entity, strength: usize, _shooter: Entity) -> Option<impl Command> {
-        Some(HQOnHit {
+        Some(MountainOnHit {
             tile: entity,
             strength,
         })
     }
 }
 
-pub struct HQActivate {
+pub struct MountainActivate {
     tile: Entity,
     position: Position,
 }
 
-impl Command for HQActivate {
+impl Command for MountainActivate {
     fn apply(self, world: &mut World) {
         world.spawn((Consumption::new(self.tile), self.position));
     }
 }
 
-pub struct HQOnHit {
+pub struct MountainOnHit {
     tile: Entity,
     strength: usize,
 }
 
-impl Command for HQOnHit {
+impl Command for MountainOnHit {
     fn apply(self, world: &mut World) {
         let mut consumer_health = world
             .get_mut::<Health>(self.tile)
-            .expect("HQOnHit command should be fired for entity with a health component");
+            .expect("MountainOnHit command should be fired for entity with a health component");
         **consumer_health -= self.strength;
     }
 }

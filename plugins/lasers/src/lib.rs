@@ -14,7 +14,7 @@ impl Plugin for LaserPlugin {
 impl LaserPlugin {
     #[allow(clippy::type_complexity)]
     fn track_lasers(
-        lasers: Query<(&Position, &Direction), With<Laser>>,
+        lasers: Query<(&Position, &Direction, &Shooter), With<Laser>>,
         colliders: Query<
             (
                 Entity,
@@ -28,7 +28,7 @@ impl LaserPlugin {
         mut laser_hit_events: EventWriter<LaserHitEvent>,
         mut laser_path_events: EventWriter<LaserPathEvent>,
     ) {
-        'lasers: for (laser_position, laser_direction) in &lasers {
+        'lasers: for (laser_position, laser_direction, laser_shooter) in &lasers {
             const LASER_RANGE: usize = 100;
             const BASE_LASER_STRENGTH: usize = 1;
 
@@ -56,6 +56,7 @@ impl LaserPlugin {
                         laser_hit_events.send(LaserHitEvent {
                             consumer: collider,
                             strength,
+                            shooter: **laser_shooter,
                         });
                         laser_path_events.send(LaserPathEvent { path });
                         break 'lasers;
@@ -76,12 +77,18 @@ pub struct LaserSystems;
 pub struct LaserHitEvent {
     pub strength: usize,
     pub consumer: Entity,
+    pub shooter: Entity,
 }
 
 #[derive(Event)]
 pub struct LaserPathEvent {
     pub path: Vec<Position>,
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(PartialEq, Eq)]
+#[derive(Component, Deref, DerefMut)]
+pub struct Shooter(Entity);
 
 #[derive(Clone, Copy, Debug)]
 #[derive(PartialEq, Eq)]
@@ -133,9 +140,21 @@ pub struct Refraction {
     new_direction: Direction,
 }
 
+impl Refraction {
+    pub fn new(new_direction: Direction) -> Self {
+        Refraction { new_direction }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 #[derive(Component, Reflect, Deref, DerefMut)]
 pub struct Amplification(usize);
+
+impl Amplification {
+    pub fn new(strength: usize) -> Self {
+        Amplification(strength)
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 #[derive(Component, Reflect, Deref, DerefMut)]
