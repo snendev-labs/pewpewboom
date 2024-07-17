@@ -55,7 +55,7 @@ impl MerchPlugin {
 #[derive(SystemSet)]
 pub struct MerchSystems;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 #[derive(Event)]
 #[derive(Reflect)]
 pub struct Purchase {

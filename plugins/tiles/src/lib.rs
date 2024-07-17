@@ -71,9 +71,9 @@ where
 
             let (entity, position, direction, tile, _) = sorted_tiles
                 .find(|(_, _, _, _, in_game)| ***in_game == game)
-                .expect(
-                    format!("failed to find tiles for game {:?}! invalid sort?", game).as_str(),
-                );
+                .unwrap_or_else(|| {
+                    panic!("failed to find tiles for game {:?}! invalid sort?", game);
+                });
             info!("Found tiles for game {:?}", game);
             info!("Processing entity {:?} in game {:?}", entity, game);
             commands.add(tile.activate(entity, position, direction));
