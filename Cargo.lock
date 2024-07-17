@@ -107,6 +107,7 @@ name = "amplifier"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "health",
  "merchandise",
  "tiles",
 ]
@@ -1926,6 +1927,15 @@ dependencies = [
  "log",
  "objc",
  "paste",
+]
+
+[[package]]
+name = "mountain"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "tiles",
 ]
 
 [[package]]

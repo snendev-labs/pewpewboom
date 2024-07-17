@@ -7,33 +7,33 @@ use tiles::{
     Tile, TilePlugin,
 };
 
-pub struct ResourcePlugin;
+pub struct ResourceDepositPlugin;
 
-impl Plugin for ResourcePlugin {
+impl Plugin for ResourceDepositPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<ResourceTile>::default());
+        app.add_plugins(TilePlugin::<ResourceDepositTile>::default());
     }
 }
 
 #[derive(Debug)]
 #[derive(Component, Reflect)]
-pub struct ResourceTile;
+pub struct ResourceDepositTile;
 
-impl Tile for ResourceTile {
+impl Tile for ResourceDepositTile {
     fn activate(
         &self,
         entity: Entity,
         position: &Position,
         _direction: &Direction,
     ) -> impl Command {
-        ResourceActivate {
+        ResourceDepositActivate {
             tile: entity,
             position: *position,
         }
     }
 
     fn on_hit(&self, entity: Entity, strength: usize, shooter: Entity) -> Option<impl Command> {
-        Some(ResourceOnHit {
+        Some(ResourceDepositOnHit {
             tile: entity,
             strength,
             shooter,
@@ -41,24 +41,24 @@ impl Tile for ResourceTile {
     }
 }
 
-pub struct ResourceActivate {
+pub struct ResourceDepositActivate {
     tile: Entity,
     position: Position,
 }
 
-impl Command for ResourceActivate {
+impl Command for ResourceDepositActivate {
     fn apply(self, world: &mut World) {
         world.spawn((Consumption::new(self.tile), self.position.clone()));
     }
 }
 
-pub struct ResourceOnHit {
+pub struct ResourceDepositOnHit {
     tile: Entity,
     strength: usize,
     shooter: Entity,
 }
 
-impl Command for ResourceOnHit {
+impl Command for ResourceDepositOnHit {
     fn apply(self, world: &mut World) {
         let mut resource_health = world
             .get_mut::<Health>(self.tile)

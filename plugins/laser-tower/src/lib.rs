@@ -43,7 +43,7 @@ impl Command for LaserTowerActivate {
 
 #[derive(Clone, Debug)]
 pub struct LaserTowerOnHit {
-    entity: Entity,
+    tile: Entity,
     // strength: Entity,
 }
 

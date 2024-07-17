@@ -1,5 +1,6 @@
 use bevy::{ecs::world::Command, prelude::*};
 
+use health::Health;
 use merchandise::{Merchandise, Money};
 use tiles::{
     lasers::{Amplification, Direction, Position},
@@ -45,4 +46,4 @@ impl Command for AmplifierActivate {
     }
 }
 
-// Possible on-hit I we want destroyable amplifiers ...
+// on-hit for amplifier later
