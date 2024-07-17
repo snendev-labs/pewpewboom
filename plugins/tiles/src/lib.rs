@@ -65,7 +65,7 @@ where
     ) {
         let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
         for (game, phase) in activated_games.iter().sort::<Entity>() {
-            if *phase != GamePhase::Act {
+            if !matches!(phase, GamePhase::Act) {
                 continue;
             }
 

@@ -18,9 +18,18 @@ impl PluginGroup for PewPewBoomPlugins {
             .add(tiles::TilesPlugin)
             .add(merchandise::MerchPlugin)
             .add(health::HealthPlugin)
-            .add(hq::HQPlugin)
-            .add(laser_tower::LaserTowerPlugin)
             .add(tilemap::TilemapPlugin)
             .add(camera::CameraPlugin)
+            .add(shop::ShopPlugin)
+    }
+}
+
+pub struct PewPewBoomBuildingsPlugins;
+
+impl PluginGroup for PewPewBoomBuildingsPlugins {
+    fn build(self) -> PluginGroupBuilder {
+        PluginGroupBuilder::start::<Self>()
+            .add(hq::HQPlugin)
+            .add(laser_tower::LaserTowerPlugin)
     }
 }

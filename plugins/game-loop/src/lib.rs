@@ -68,7 +68,7 @@ pub struct GameLoopSystems;
 #[derive(Component, Reflect)]
 pub struct GameInstance;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default)]
 #[derive(Component, Reflect)]
 pub enum GamePhase {
     #[default]
