@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use bevy::{ecs::world::Command, prelude::*};
 
 use health::Health;
@@ -60,18 +62,19 @@ pub struct ResourceDepositOnHit {
 
 impl Command for ResourceDepositOnHit {
     fn apply(self, world: &mut World) {
-        let mut resource_health = world
-            .get_mut::<Health>(self.tile)
-            .expect("Resource tile should have health");
+        let mut query = world.query::<(&mut Money, &mut Health)>();
+        let [(mut resource_money, mut resource_health), (mut shooter_money, _)] =
+            query.get_many_mut(world, [self.tile, self.shooter]).expect(
+                "Shooting player and resource tile should both have health and money components",
+            );
 
-        **resource_health -= self.strength;
-        if **resource_health == 0 {
-            let mut money_query = world.query::<&mut Money>();
-            let [resource_money, mut shooter_money] = money_query
-                .get_many_mut(world, [self.tile, self.shooter])
-                .expect("Shooting player and resource tile should both have money components");
-
-            **shooter_money += **resource_money;
+        if **resource_money > 0 {
+            let money_transfer = min(**resource_money, self.strength);
+            **resource_money -= money_transfer;
+            **shooter_money += money_transfer;
+        } else {
+            let health_decrease = min(**resource_health, self.strength);
+            **resource_health -= health_decrease;
         }
     }
 }
