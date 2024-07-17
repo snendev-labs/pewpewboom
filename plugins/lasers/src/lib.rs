@@ -5,7 +5,8 @@ pub struct LaserPlugin;
 
 impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LaserHitEvent>()
+        app.add_event::<LaserPathEvent>()
+            .add_event::<LaserHitEvent>()
             .add_systems(Update, Self::track_lasers.in_set(LaserSystems));
     }
 }
