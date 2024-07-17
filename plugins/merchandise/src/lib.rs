@@ -13,46 +13,40 @@ pub struct MerchPlugin;
 
 impl Plugin for MerchPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<Purchase>();
         app.init_resource::<MerchRegistry>();
         app.add_systems(
             Update,
-            Self::try_purchase.anyhow_alerts().in_set(MerchSystems),
+            Self::handle_purchases.anyhow_alerts().in_set(MerchSystems),
         );
     }
 }
 
 impl MerchPlugin {
-    fn try_purchase(
-        mut commands: Commands,
-        mut shoppers: Query<(Entity, &mut Money, Option<&Purchase>), With<Shopper>>,
+    fn handle_purchases(
+        mut purchases: EventReader<Purchase>,
+        mut shoppers: Query<&mut Money, With<Shopper>>,
     ) -> ResultVec<(), PurchaseError> {
-        let purchases = shoppers
-            .iter_mut()
-            .map(|(shopper, money, purchase)| {
-                purchase
-                    .ok_or(PurchaseError::NoSelection(shopper))
-                    .and_then(|purchase| {
-                        if *money > purchase.price() {
-                            Ok((shopper, money, purchase))
-                        } else {
-                            Err(PurchaseError::NotEnoughMoney {
-                                shopper,
-                                cost: purchase.price(),
-                                money: *money,
-                            })
-                        }
-                    })
-            })
-            .collect::<Vec<_>>();
-
-        if purchases.iter().all(Result::is_ok) {
-            for (entity, mut money, purchase) in purchases.into_iter().filter_map(Result::ok) {
-                **money = money.saturating_sub(*purchase.price());
-                commands.entity(entity).remove::<Purchase>();
+        let mut errors = vec![];
+        for Purchase { buyer, merch } in purchases.read() {
+            let Ok(mut money) = shoppers.get_mut(*buyer) else {
+                continue;
+            };
+            let cost = merch.price();
+            if **money >= *cost {
+                **money = money.saturating_sub(*cost);
+            } else {
+                errors.push(PurchaseError::NotEnoughMoney {
+                    shopper: *buyer,
+                    cost,
+                    money: *money,
+                })
             }
+        }
+        if errors.is_empty() {
             Ok(())
         } else {
-            Err(purchases.into_iter().filter_map(Result::err).collect())
+            Err(errors)
         }
     }
 }
@@ -61,11 +55,24 @@ impl MerchPlugin {
 #[derive(SystemSet)]
 pub struct MerchSystems;
 
+#[derive(Clone, Copy, Debug)]
+#[derive(Event)]
+#[derive(Reflect)]
+pub struct Purchase {
+    buyer: Entity,
+    merch: Merch,
+}
+
+impl Purchase {
+    pub fn new(buyer: Entity, merch: Merch) -> Self {
+        Purchase { buyer, merch }
+    }
+}
+
 #[derive(Debug)]
 #[derive(Error)]
+#[derive(Reflect)]
 pub enum PurchaseError {
-    #[error("No selection made for {0}")]
-    NoSelection(Entity),
     #[error("N")]
     NotEnoughMoney {
         shopper: Entity,

@@ -14,10 +14,6 @@ impl std::fmt::Display for Money {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-#[derive(Component, Deref, DerefMut, Reflect)]
-pub struct Purchase(Merch);
-
 impl Money {
     pub const fn new(value: usize) -> Self {
         Money(value)
