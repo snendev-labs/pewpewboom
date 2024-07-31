@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
@@ -18,6 +18,10 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::GREEN))
+    }
+
     fn activate(
         &self,
         entity: Entity,

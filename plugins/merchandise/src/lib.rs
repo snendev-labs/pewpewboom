@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use bevy::{prelude::*, reflect::GetTypeRegistration};
+use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use bevy_anyhow_alert::*;
 
@@ -9,12 +9,20 @@ pub use components::*;
 mod registry;
 pub use registry::*;
 
+pub trait Merchandise {
+    const PRICE: Money;
+    const NAME: &'static str;
+
+    fn material(asset_server: &AssetServer) -> ColorMaterial;
+}
+
 pub struct MerchPlugin;
 
 impl Plugin for MerchPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<Purchase>();
         app.init_resource::<MerchRegistry>();
+        app.init_resource::<MerchMaterials>();
         app.add_systems(
             Update,
             Self::handle_purchases.anyhow_alerts().in_set(MerchSystems),
@@ -81,10 +89,9 @@ pub enum PurchaseError {
     },
 }
 
-pub trait Merchandise {
-    const PRICE: Money;
-    const NAME: &'static str;
-}
+#[derive(Debug, Default)]
+#[derive(Deref, DerefMut, Resource, Reflect)]
+pub struct MerchMaterials(HashMap<MerchId, Handle<ColorMaterial>>);
 
 pub trait MerchAppExt {
     fn define_merchandise<T>(&mut self)
@@ -100,6 +107,15 @@ impl MerchAppExt for App {
         T: Component + GetTypeRegistration + Merchandise,
     {
         let mut registry = self.world_mut().resource_mut::<MerchRegistry>();
-        registry.register::<T>().unwrap();
+        let merch = match registry.register::<T>() {
+            Ok(merch) => merch,
+            Err(merch) => merch,
+        };
+        let asset_server = self.world().resource::<AssetServer>();
+        let material = T::material(asset_server);
+        let mut materials = self.world_mut().resource_mut::<Assets<ColorMaterial>>();
+        let handle = materials.add(material);
+        let mut textures = self.world_mut().resource_mut::<MerchMaterials>();
+        textures.insert(merch.id(), handle);
     }
 }

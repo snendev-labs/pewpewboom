@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
@@ -19,12 +19,11 @@ impl Plugin for RefractorPlugin {
 #[derive(Component, Reflect)]
 pub struct RefractorTile;
 
-impl Merchandise for RefractorTile {
-    const PRICE: Money = Money::new(5);
-    const NAME: &'static str = "Refractor Tower";
-}
-
 impl Tile for RefractorTile {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
+    }
+
     fn activate(
         &self,
         _entity: Entity,
@@ -35,6 +34,17 @@ impl Tile for RefractorTile {
             position: *position,
             direction: *direction,
         }
+    }
+}
+
+impl Merchandise for RefractorTile {
+    const PRICE: Money = Money::new(5);
+    const NAME: &'static str = "Refractor Tower";
+
+    fn material(asset_server: &AssetServer) -> ColorMaterial {
+        let mut base = <Self as Tile>::material(asset_server);
+        base.color.set_alpha(0.6);
+        base
     }
 }
 

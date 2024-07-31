@@ -6,7 +6,8 @@ use sickle_ui::{
 };
 
 use game_loop::GamePhase;
-use merchandise::{Merch, MerchRegistry};
+use merchandise::{Merch, MerchMaterials, MerchRegistry};
+use tilemap::{EmptyTileMaterial, TargetedTile};
 
 pub struct ShopPlugin;
 
@@ -15,7 +16,18 @@ impl Plugin for ShopPlugin {
         app.add_plugins(SickleUiPlugin);
         app.add_systems(
             Update,
-            (Self::setup_ui, Self::handle_shop_selection).in_set(ShopSystems),
+            (
+                Self::setup_ui,
+                Self::handle_shop_selection,
+                Self::update_tile_material.run_if(
+                    resource_exists_and_changed::<SelectedMerch>
+                        .or_else(resource_removed::<SelectedMerch>())
+                        .or_else(resource_exists_and_changed::<TargetedTile>)
+                        .or_else(resource_removed::<TargetedTile>()),
+                ),
+            )
+                .chain()
+                .in_set(ShopSystems),
         );
     }
 }
@@ -78,6 +90,51 @@ impl ShopPlugin {
             commands.remove_resource::<SelectedMerch>();
         }
     }
+
+    fn update_tile_material(
+        mut tile_materials: Query<&mut Handle<ColorMaterial>>,
+        merch_materials: Res<MerchMaterials>,
+        selected_merch: Option<Res<SelectedMerch>>,
+        targeted_tile: Option<Res<TargetedTile>>,
+        empty_tile_material: Res<EmptyTileMaterial>,
+        mut last_target: Local<Option<TargetedTile>>,
+        mut last_merch: Local<Option<SelectedMerch>>,
+    ) {
+        if let Some(targeted_tile) = targeted_tile.as_deref() {
+            if let Ok(mut tile_material) = tile_materials.get_mut(targeted_tile.tile) {
+                if let Some(merch_material) = selected_merch
+                    .as_deref()
+                    .and_then(|merch| merch_materials.get(&merch.id()))
+                {
+                    *tile_material = merch_material.clone();
+                } else {
+                    *tile_material = empty_tile_material.clone();
+                }
+            }
+        }
+        // todo: check that tile isn't occupied
+
+        if targeted_tile.as_deref().cloned() != *last_target {
+            if let Some(target) = last_target.as_ref() {
+                if let Ok(mut tile_material) = tile_materials.get_mut(target.tile) {
+                    *tile_material = empty_tile_material.clone();
+                }
+            }
+        }
+        if let Some(targeted_tile) = targeted_tile.as_deref() {
+            let selected_merch = selected_merch.as_deref();
+            if selected_merch != last_merch.as_ref() {
+                if let Ok(mut tile_material) = tile_materials.get_mut(targeted_tile.tile) {
+                    *tile_material = selected_merch
+                        .and_then(|selected_merch| merch_materials.get(&selected_merch.id()))
+                        .cloned()
+                        .unwrap_or_else(|| empty_tile_material.clone());
+                }
+            }
+        }
+        *last_target = targeted_tile.as_deref().cloned();
+        *last_merch = selected_merch.as_deref().cloned();
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -112,6 +169,6 @@ impl ShopUIRoot {
 #[derive(Component, Reflect)]
 pub struct ShopMerchOption;
 
-#[derive(Debug)]
-#[derive(Resource, Reflect)]
+#[derive(Clone, Debug, PartialEq)]
+#[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct SelectedMerch(Merch);

@@ -8,6 +8,8 @@ use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position};
 pub use lasers;
 
 pub trait Tile {
+    fn material(asset_server: &AssetServer) -> ColorMaterial;
+
     fn activate(&self, entity: Entity, position: &Position, direction: &Direction) -> impl Command;
 
     #[allow(unused_variables)]

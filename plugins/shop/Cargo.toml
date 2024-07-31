@@ -10,3 +10,5 @@ bevy = { workspace = true, features = ["bevy_ui"] }
 game_loop = { workspace = true }
 merchandise = { workspace = true }
 sickle_ui = { workspace = true }
+tilemap = { workspace = true }
+tiles = { workspace = true }

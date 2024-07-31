@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
@@ -20,6 +20,10 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::CRIMSON))
+    }
+
     fn activate(&self, tile: Entity, position: &Position, direction: &Direction) -> impl Command {
         LaserTowerActivate {
             tile,
@@ -32,6 +36,12 @@ impl Tile for LaserTower {
 impl Merchandise for LaserTower {
     const PRICE: Money = Money::new(10);
     const NAME: &'static str = "Laser Tower";
+
+    fn material(asset_server: &AssetServer) -> ColorMaterial {
+        let mut base = <Self as Tile>::material(asset_server);
+        base.color.set_alpha(0.6);
+        base
+    }
 }
 
 #[derive(Clone, Debug)]

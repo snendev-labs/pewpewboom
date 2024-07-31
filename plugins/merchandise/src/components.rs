@@ -24,7 +24,7 @@ impl Money {
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct MerchId(usize);
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[derive(Component, Reflect)]
 pub struct Merch {
     id: MerchId,

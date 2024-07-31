@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
@@ -18,6 +18,10 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::BEIGE))
+    }
+
     fn activate(
         &self,
         entity: Entity,

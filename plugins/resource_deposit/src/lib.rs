@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use merchandise::Money;
@@ -22,6 +22,10 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_GOLDENROD))
+    }
+
     fn activate(
         &self,
         entity: Entity,

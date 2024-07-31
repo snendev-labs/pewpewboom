@@ -3,8 +3,8 @@ use bevy::prelude::{
     resource_added, resource_exists_and_changed, resource_removed, App, Assets, BuildChildren,
     Bundle, Camera, Color, ColorMaterial, ColorMesh2dBundle, Commands, Component, Deref, DerefMut,
     DespawnRecursiveExt, Entity, GlobalTransform, Handle, IntoSystemConfigs, Mesh, Name, Plugin,
-    Query, Reflect, Res, ResMut, Resource, SpatialBundle, SystemSet, Text, Text2dBundle, TextStyle,
-    Transform, Update, Vec3Swizzles, Window, With, Without,
+    Query, Reflect, Res, ResMut, Resource, SpatialBundle, Startup, SystemSet, Text, Text2dBundle,
+    TextStyle, Transform, Update, Vec3Swizzles, Window, With, Without,
 };
 use bevy::render::{
     mesh::{Indices, PrimitiveTopology},
@@ -19,18 +19,19 @@ pub struct TilemapPlugin;
 
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                Self::spawn_tilemaps,
-                Self::destroy_targeted_tile.run_if(resource_removed::<TargetedTile>()),
-                Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
-                Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
-                Self::handle_cursor_position,
-            )
-                .chain()
-                .in_set(TilemapSystems),
-        );
+        app.add_systems(Startup, EmptyTileMaterial::startup_system)
+            .add_systems(
+                Update,
+                (
+                    Self::spawn_tilemaps,
+                    Self::destroy_targeted_tile.run_if(resource_removed::<TargetedTile>()),
+                    Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
+                    Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
+                    Self::handle_cursor_position,
+                )
+                    .chain()
+                    .in_set(TilemapSystems),
+            );
     }
 }
 
@@ -40,9 +41,9 @@ impl TilemapPlugin {
 
     fn spawn_tilemaps(
         mut commands: Commands,
-        tilemaps: Query<Entity, (With<Tilemap>, Without<TilemapData>)>,
+        tilemaps: Query<Entity, (With<Tilemap>, Without<TilemapEntities>)>,
+        empty_tile_material: Res<EmptyTileMaterial>,
         mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
     ) {
         for map_entity in &tilemaps {
             let layout = HexLayout {
@@ -50,7 +51,6 @@ impl TilemapPlugin {
                 ..Default::default()
             };
             let tile_mesh = meshes.add(Tile::mesh(&layout));
-            let tile_material = materials.add(Tile::material());
 
             let mut tiles = HashMap::default();
             for coord in shapes::Hexagon::default().coords() {
@@ -61,7 +61,7 @@ impl TilemapPlugin {
                         position,
                         10.,
                         tile_mesh.clone(),
-                        tile_material.clone_weak(),
+                        empty_tile_material.clone_weak(),
                     ))
                     .with_children(|b| {
                         b.spawn(Text2dBundle {
@@ -81,10 +81,7 @@ impl TilemapPlugin {
                     .id();
                 tiles.insert(coord, hex_entity);
             }
-            let tilemap_data = TilemapData {
-                tile_material: tile_material.clone(),
-                tiles,
-            };
+            let tilemap_data = TilemapEntities { tiles };
             commands
                 .entity(map_entity)
                 .insert((TilemapLayout(layout), tilemap_data));
@@ -95,7 +92,7 @@ impl TilemapPlugin {
         mut commands: Commands,
         windows: Query<&Window, With<PrimaryWindow>>,
         cameras: Query<(&Camera, &GlobalTransform)>,
-        tilemaps: Query<(Entity, &TilemapLayout, &TilemapData)>,
+        tilemaps: Query<(Entity, &TilemapLayout, &TilemapEntities)>,
         targeted_tile: Option<ResMut<TargetedTile>>,
     ) {
         let Ok(window) = windows.get_single() else {
@@ -104,7 +101,7 @@ impl TilemapPlugin {
         let Ok((camera, camera_transform)) = cameras.get_single() else {
             return;
         };
-        let Ok((tilemap, layout, data)) = tilemaps.get_single() else {
+        let Ok((tilemap, layout, tiles)) = tilemaps.get_single() else {
             return;
         };
         let Some(position) = window
@@ -116,7 +113,7 @@ impl TilemapPlugin {
 
         // convert to hex and back to "snap" to the hex border
         let coord: Hex = layout.world_pos_to_hex(position);
-        if let Some(hovered_tile) = data.tiles.get(&coord).copied() {
+        if let Some(hovered_tile) = tiles.get(&coord).copied() {
             if let Some(mut targeted_tile) = targeted_tile {
                 targeted_tile.tile = hovered_tile;
                 targeted_tile.tilemap = tilemap;
@@ -229,10 +226,22 @@ pub struct TilemapLayout(HexLayout);
 pub struct TilemapCursor(Entity);
 
 #[derive(Clone, Debug)]
-#[derive(Component, Reflect)]
-pub struct TilemapData {
+#[derive(Component, Deref, DerefMut, Reflect)]
+pub struct TilemapEntities {
     tiles: HashMap<Hex, Entity>,
-    tile_material: Handle<ColorMaterial>,
+}
+
+#[derive(Deref, Resource)]
+pub struct EmptyTileMaterial(Handle<ColorMaterial>);
+
+impl EmptyTileMaterial {
+    fn new(materials: &mut Assets<ColorMaterial>) -> Self {
+        EmptyTileMaterial(materials.add(Color::WHITE))
+    }
+
+    fn startup_system(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+        commands.insert_resource(Self::new(materials.as_mut()));
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -254,10 +263,6 @@ impl Tile {
         .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, mesh_info.normals)
         .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, mesh_info.uvs)
         .with_inserted_indices(Indices::U16(mesh_info.indices))
-    }
-
-    pub fn material() -> impl Into<ColorMaterial> {
-        Color::WHITE
     }
 }
 
@@ -317,6 +322,7 @@ impl<T: Component> TileBundle<T> {
     }
 }
 
+#[derive(Clone, PartialEq)]
 #[derive(Resource)]
 pub struct TargetedTile {
     pub tile: Entity,

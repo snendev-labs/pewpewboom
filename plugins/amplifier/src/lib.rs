@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
@@ -19,12 +19,11 @@ impl Plugin for AmplifierPlugin {
 #[derive(Component, Reflect)]
 pub struct AmplifierTile;
 
-impl Merchandise for AmplifierTile {
-    const PRICE: Money = Money::new(3);
-    const NAME: &'static str = "Amplifier Tower";
-}
-
 impl Tile for AmplifierTile {
+    fn material(_asset_server: &AssetServer) -> ColorMaterial {
+        ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_ORANGE))
+    }
+
     fn activate(
         &self,
         _entity: Entity,
@@ -34,6 +33,17 @@ impl Tile for AmplifierTile {
         AmplifierActivate {
             position: *position,
         }
+    }
+}
+
+impl Merchandise for AmplifierTile {
+    const PRICE: Money = Money::new(3);
+    const NAME: &'static str = "Amplifier Tower";
+
+    fn material(asset_server: &AssetServer) -> ColorMaterial {
+        let mut base = <Self as Tile>::material(asset_server);
+        base.color.set_alpha(0.6);
+        base
     }
 }
 
