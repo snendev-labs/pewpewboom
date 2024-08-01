@@ -3206,10 +3206,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflector"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "health",
+ "merchandise",
+ "tiles",
+]
+
+[[package]]
 name = "refractor"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "health",
  "merchandise",
  "tiles",
 ]

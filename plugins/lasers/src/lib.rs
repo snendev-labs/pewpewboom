@@ -1,3 +1,5 @@
+use std::fmt::Error;
+
 use bevy::prelude::*;
 use hexx::*;
 
@@ -20,10 +22,16 @@ impl LaserPlugin {
                 Entity,
                 &Position,
                 Option<&Refraction>,
+                Option<&Reflection>,
                 Option<&Amplification>,
                 Option<&Consumption>,
             ),
-            Or<(With<Refraction>, With<Amplification>, With<Consumption>)>,
+            Or<(
+                With<Refraction>,
+                With<Reflection>,
+                With<Amplification>,
+                With<Consumption>,
+            )>,
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
         mut laser_path_events: EventWriter<LaserPathEvent>,
@@ -42,17 +50,31 @@ impl LaserPlugin {
                     current_position.neighbor(current_direction.as_hex()).into();
                 path.push(next_position);
 
-                if let Some((collider, _, refraction, amplification, consumption)) = colliders
-                    .iter()
-                    .find(|(_, position, _, _, _)| **position == next_position)
+                if let Some((collider, _, refraction, reflection, amplification, consumption)) =
+                    colliders
+                        .iter()
+                        .find(|(_, position, _, _, _, _)| **position == next_position)
                 {
                     if let Some(refraction) = refraction {
-                        current_direction = refraction.new_direction;
+                        if let Some(refracted_direction) = refraction.refract(current_direction) {
+                            current_direction = refracted_direction;
+                        }
+                    }
+                    if let Some(reflection) = reflection {
+                        if let Some(reflected_direction) = reflection.reflect(current_direction) {
+                            current_direction = reflected_direction;
+                        }
                     }
                     if let Some(amplification) = amplification {
                         strength += **amplification;
                     }
-                    if consumption.is_some() {
+                    if consumption.is_some()
+                        && consumption
+                            .unwrap()
+                            .vulnerable
+                            .iter()
+                            .any(|&direction| direction == current_direction)
+                    {
                         laser_hit_events.send(LaserHitEvent {
                             consumer: collider,
                             strength,
@@ -101,7 +123,7 @@ impl From<Hex> for Position {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[derive(Component, Reflect)]
 pub enum Direction {
     #[default]
@@ -114,7 +136,16 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn as_hex(&self) -> EdgeDirection {
+    pub const ALL: [Self; 6] = [
+        Self::North,
+        Self::South,
+        Self::Northeast,
+        Self::Southeast,
+        Self::Northwest,
+        Self::Southwest,
+    ];
+
+    pub fn as_hex(&self) -> EdgeDirection {
         match self {
             Self::North => EdgeDirection::FLAT_NORTH,
             Self::South => EdgeDirection::FLAT_SOUTH,
@@ -122,6 +153,61 @@ impl Direction {
             Self::Southeast => EdgeDirection::FLAT_SOUTH_EAST,
             Self::Northwest => EdgeDirection::FLAT_NORTH_WEST,
             Self::Southwest => EdgeDirection::FLAT_SOUTH_WEST,
+        }
+    }
+
+    pub fn opposite(&self) -> Self {
+        match self {
+            Self::North => Self::South,
+            Self::South => Self::North,
+            Self::Northeast => Self::Southwest,
+            Self::Southeast => Self::Northwest,
+            Self::Northwest => Self::Southeast,
+            Self::Southwest => Self::Northeast,
+        }
+    }
+
+    pub fn left(&self) -> Self {
+        match self {
+            Self::North => Self::Northwest,
+            Self::South => Self::Southeast,
+            Self::Northeast => Self::North,
+            Self::Southeast => Self::Northeast,
+            Self::Northwest => Self::Southwest,
+            Self::Southwest => Self::South,
+        }
+    }
+
+    pub fn right(&self) -> Self {
+        match self {
+            Self::North => Self::Northeast,
+            Self::South => Self::Southwest,
+            Self::Northeast => Self::Southeast,
+            Self::Southeast => Self::South,
+            Self::Northwest => Self::North,
+            Self::Southwest => Self::Northwest,
+        }
+    }
+
+    pub fn front_directions(&self) -> [Self; 3] {
+        match self {
+            Self::North => [Self::Northeast, Self::North, Self::Northwest],
+            Self::South => [Self::Southwest, Self::South, Self::Southeast],
+            Self::Northeast => [Self::Southeast, Self::Northeast, Self::North],
+            Self::Southeast => [Self::South, Self::Southeast, Self::Northeast],
+            Self::Northwest => [Self::North, Self::Northwest, Self::Southwest],
+            Self::Southwest => [Self::Northwest, Self::Southwest, Self::South],
+        }
+    }
+
+    pub fn back_directions(&self) -> [Self; 3] {
+        match self {
+            Self::North => [Self::Southwest, Self::South, Self::Southeast],
+            Self::South => [Self::Northeast, Self::North, Self::Northwest],
+            Self::Northeast => [Self::Northwest, Self::Southwest, Self::South],
+            Self::Southeast => [Self::North, Self::Northwest, Self::Southwest],
+            Self::Northwest => [Self::South, Self::Southeast, Self::Northeast],
+            Self::Southwest => [Self::Southeast, Self::Northeast, Self::North],
         }
     }
 }
@@ -137,12 +223,49 @@ impl Laser {
 #[derive(Clone, Copy, Debug, Default)]
 #[derive(Component, Reflect)]
 pub struct Refraction {
-    new_direction: Direction,
+    facing: Direction,
 }
 
 impl Refraction {
-    pub fn new(new_direction: Direction) -> Self {
-        Refraction { new_direction }
+    pub fn new(facing: Direction) -> Self {
+        Refraction { facing }
+    }
+
+    pub fn refract(&self, incoming: Direction) -> Option<Direction> {
+        if self
+            .facing
+            .back_directions()
+            .iter()
+            .any(|&direction| direction == incoming)
+        {
+            Some(self.facing.opposite())
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+#[derive(Component, Reflect)]
+pub struct Reflection {
+    facing: Direction,
+}
+
+impl Reflection {
+    pub fn new(facing: Direction) -> Self {
+        Reflection { facing }
+    }
+
+    pub fn reflect(&self, incoming: Direction) -> Option<Direction> {
+        if incoming == self.facing.opposite() {
+            Some(self.facing)
+        } else if incoming == self.facing.left().opposite() {
+            Some(self.facing.right())
+        } else if incoming == self.facing.right().opposite() {
+            Some(self.facing.left())
+        } else {
+            None
+        }
     }
 }
 
@@ -156,12 +279,18 @@ impl Amplification {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-#[derive(Component, Reflect, Deref, DerefMut)]
-pub struct Consumption(Entity);
+#[derive(Clone, Debug)]
+#[derive(Component, Reflect)]
+pub struct Consumption {
+    entity: Entity,
+    vulnerable: Vec<Direction>,
+}
 
 impl Consumption {
-    pub fn new(tile: Entity) -> Self {
-        Consumption(tile)
+    pub fn new(tile: Entity, vulnerable: Vec<Direction>) -> Self {
+        Consumption {
+            entity: tile,
+            vulnerable,
+        }
     }
 }

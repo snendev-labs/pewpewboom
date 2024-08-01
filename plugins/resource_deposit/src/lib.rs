@@ -54,7 +54,10 @@ pub struct ResourceDepositActivate {
 
 impl Command for ResourceDepositActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Consumption::new(self.tile), self.position.clone()));
+        world.spawn((
+            Consumption::new(self.tile, Direction::ALL.to_vec()),
+            self.position.clone(),
+        ));
     }
 }
 
