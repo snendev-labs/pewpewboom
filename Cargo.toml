@@ -16,7 +16,7 @@ refractor = { path = "plugins/refractor" }
 resource_deposit = { path = "plugins/resource_deposit" }
 shop = { path = "plugins/shop" }
 tilemap = { path = "plugins/tilemap" }
-tilemap-3d = { path = "plugins/tilemap-3d" }
+tilemap_3d = { path = "plugins/tilemap_3d" }
 tiles = { path = "plugins/tiles" }
 
 # bevy
@@ -24,7 +24,7 @@ bevy = { version = "0.14", default-features = false }
 bevy_anyhow_alert = "0.3"
 bevy_prng = { version = "0.6", features = ["wyrand"] }
 bevy_rand = { version = "0.6", features = ["wyrand"] }
-bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }
+bevy_rts_camera = { version = "0.8" }
 hexx = { git = "https://github.com/ManevilleF/hexx", features = [
     "bevy_reflect",
 ], rev = "35bd74e703925d19160674f7cfe437ce70adec06" }
@@ -52,7 +52,7 @@ merchandise = { workspace = true }
 refractor = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }
-tilemap-3d = { workspace = true }
+tilemap_3d = { workspace = true }
 tiles = { workspace = true }
 
 # bevy

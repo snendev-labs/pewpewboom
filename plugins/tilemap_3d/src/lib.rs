@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use bevy::{
     color::Color,
+    math::Vec3Swizzles,
     pbr::{PbrBundle, StandardMaterial},
     prelude::{
         Assets, BuildChildren, Bundle, Camera, Commands, Component, Deref, DerefMut, Entity,
-        GlobalTransform, Handle, IntoSystemConfigs, Mesh, Name, Plugin, Query, Reflect, Res,
-        ResMut, Resource, SpatialBundle, Startup, SystemSet, Transform, Update, Vec2, Window, With,
-        Without,
+        GlobalTransform, Handle, InfinitePlane3d, IntoSystemConfigs, Mesh, Name, Plugin, Query,
+        Reflect, Res, ResMut, Resource, SpatialBundle, Startup, SystemSet, Transform, Update, Vec2,
+        Vec3, Window, With, Without,
     },
     render::{
         mesh::{Indices, PrimitiveTopology},
@@ -30,7 +31,7 @@ impl Plugin for TilemapPlugin {
 }
 
 impl TilemapPlugin {
-    const HEX_SIZE: Vec2 = Vec2::splat(60.);
+    const HEX_SIZE: Vec2 = Vec2::splat(3.);
 
     fn spawn_tilemap(
         mut commands: Commands,
@@ -83,15 +84,20 @@ impl TilemapPlugin {
         let Ok((tilemap, layout, tiles)) = tilemaps.get_single() else {
             return;
         };
-        let Some(position) = window
+        let Some(ray) = window
             .cursor_position()
-            .and_then(|position| camera.viewport_to_world_2d(camera_transform, position))
+            .and_then(|position| camera.viewport_to_world(camera_transform, position))
         else {
             return;
         };
 
+        let Some(distance) = ray.intersect_plane(Vec3::ZERO, InfinitePlane3d::new(Vec3::Y)) else {
+            return;
+        };
+        let world_cursor_point = ray.origin + ray.direction * distance;
+
         // convert to hex and back to "snap" to the hex border
-        let coord: Hex = layout.world_pos_to_hex(position);
+        let coord: Hex = layout.world_pos_to_hex(world_cursor_point.xz());
         if let Some(hovered_tile) = tiles.get(&coord).copied() {
             if let Some(mut targeted_tile) = targeted_tile {
                 targeted_tile.tile = hovered_tile;

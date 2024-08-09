@@ -928,7 +928,8 @@ dependencies = [
 [[package]]
 name = "bevy_rts_camera"
 version = "0.8.1"
-source = "git+https://github.com/snendev/bevy_rts_camera_2d#6a12d0576bd61e4a88d39d6a3558e5e8923d725d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccbf069b44de3fa753810fdb5989413de5efab12a218c38ab2b93dc834611d82"
 dependencies = [
  "bevy",
  "bevy_mod_raycast",
@@ -1328,6 +1329,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_rts_camera",
+ "tilemap_3d",
 ]
 
 [[package]]
@@ -3026,7 +3028,7 @@ dependencies = [
  "refractor",
  "shop",
  "tilemap",
- "tilemap-3d",
+ "tilemap_3d",
  "tiles",
 ]
 
@@ -3614,7 +3616,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tilemap-3d"
+name = "tilemap_3d"
 version = "0.1.0"
 dependencies = [
  "bevy",
