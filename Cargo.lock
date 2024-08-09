@@ -3026,6 +3026,7 @@ dependencies = [
  "refractor",
  "shop",
  "tilemap",
+ "tilemap-3d",
  "tiles",
 ]
 
@@ -3606,6 +3607,14 @@ dependencies = [
 
 [[package]]
 name = "tilemap"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "hexx",
+]
+
+[[package]]
+name = "tilemap-3d"
 version = "0.1.0"
 dependencies = [
  "bevy",
