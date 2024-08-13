@@ -30,7 +30,7 @@ impl Tile for LaserTower {
         tile: Entity,
         position: &Position,
         direction: &Direction,
-        rotation: &Rotation,
+        _rotation: &Rotation,
     ) -> impl Command {
         LaserTowerActivate {
             tile,
