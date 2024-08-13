@@ -53,10 +53,7 @@ pub struct LaserTowerActivate {
 
 impl Command for LaserTowerActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((
-            Consumption::new(self.tile, Direction::ALL.to_vec()),
-            self.position,
-        ));
+        world.spawn((Consumption::bundle(self.tile, Direction::ALL.to_vec(), self.position)));
         world.spawn((Laser, self.position, self.direction));
     }
 }

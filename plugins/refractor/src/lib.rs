@@ -62,8 +62,11 @@ impl Command for RefractorActivate {
     fn apply(self, world: &mut World) {
         world.spawn((
             Refraction::new(self.direction),
-            Consumption::new(self.tile, self.direction.back_directions().to_vec()),
-            self.position.clone(),
+            Consumption::bundle(
+                self.tile,
+                self.direction.back_directions().to_vec(),
+                self.position.clone(),
+            ),
         ));
     }
 }

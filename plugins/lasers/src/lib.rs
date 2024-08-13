@@ -55,15 +55,15 @@ impl LaserPlugin {
                         .iter()
                         .find(|(_, position, _, _, _, _)| **position == next_position)
                 {
-                    if let Some(refraction) = refraction {
-                        if let Some(refracted_direction) = refraction.refract(current_direction) {
-                            current_direction = refracted_direction;
-                        }
+                    if let Some(refracted_direction) =
+                        refraction.and_then(|refraction| refraction.refract(current_direction))
+                    {
+                        current_direction = refracted_direction;
                     }
-                    if let Some(reflection) = reflection {
-                        if let Some(reflected_direction) = reflection.reflect(current_direction) {
-                            current_direction = reflected_direction;
-                        }
+                    if let Some(reflected_direction) =
+                        reflection.and_then(|reflection| reflection.reflect(current_direction))
+                    {
+                        current_direction = reflected_direction;
                     }
                     if let Some(amplification) = amplification {
                         strength += **amplification;
@@ -287,10 +287,14 @@ pub struct Consumption {
 }
 
 impl Consumption {
-    pub fn new(tile: Entity, vulnerable: Vec<Direction>) -> Self {
+    fn new(tile: Entity, vulnerable: Vec<Direction>) -> Self {
         Consumption {
             entity: tile,
             vulnerable,
         }
+    }
+
+    pub fn bundle(tile: Entity, vulnerable: Vec<Direction>, position: Position) -> impl Bundle {
+        (Consumption::new(tile, vulnerable), position)
     }
 }
