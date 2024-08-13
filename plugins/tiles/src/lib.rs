@@ -3,14 +3,20 @@ use std::marker::PhantomData;
 use bevy::{ecs::world::Command, prelude::*};
 
 use game_loop::{GamePhase, InGame};
-use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position};
+use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation};
 
 pub use lasers;
 
 pub trait Tile {
     fn material(asset_server: &AssetServer) -> ColorMaterial;
 
-    fn activate(&self, entity: Entity, position: &Position, direction: &Direction) -> impl Command;
+    fn activate(
+        &self,
+        entity: Entity,
+        position: &Position,
+        direction: &Direction,
+        rotation: &Rotation,
+    ) -> impl Command;
 
     #[allow(unused_variables)]
     fn on_hit(&self, entity: Entity, strength: usize, shooter: Entity) -> Option<impl Command> {
@@ -63,7 +69,7 @@ where
     fn activate_tiles(
         mut commands: Commands,
         activated_games: Query<(Entity, &GamePhase), Changed<GamePhase>>,
-        activated_tiles: Query<(Entity, &Position, &Direction, &T, &InGame)>,
+        activated_tiles: Query<(Entity, &Position, &Direction, &Rotation, &T, &InGame)>,
     ) {
         let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
         for (game, phase) in activated_games.iter().sort::<Entity>() {
@@ -71,22 +77,22 @@ where
                 continue;
             }
 
-            let (entity, position, direction, tile, _) = sorted_tiles
-                .find(|(_, _, _, _, in_game)| ***in_game == game)
+            let (entity, position, direction, rotation, tile, _) = sorted_tiles
+                .find(|(_, _, _, _, _, in_game)| ***in_game == game)
                 .unwrap_or_else(|| {
                     panic!("failed to find tiles for game {:?}! invalid sort?", game);
                 });
             info!("Found tiles for game {:?}", game);
             info!("Processing entity {:?} in game {:?}", entity, game);
-            commands.add(tile.activate(entity, position, direction));
+            commands.add(tile.activate(entity, position, direction, rotation));
 
             while sorted_tiles
                 .peek()
-                .is_some_and(|(_, _, _, _, in_game)| ***in_game == game)
+                .is_some_and(|(_, _, _, _, _, in_game)| ***in_game == game)
             {
-                let (entity, position, direction, tile, _) = sorted_tiles.next().unwrap();
+                let (entity, position, direction, rotation, tile, _) = sorted_tiles.next().unwrap();
                 info!("Processing entity {:?} in game {:?}", entity, game);
-                commands.add(tile.activate(entity, position, direction));
+                commands.add(tile.activate(entity, position, direction, rotation));
             }
         }
     }

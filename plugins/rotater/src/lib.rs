@@ -2,24 +2,24 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Direction, Position, Reflection, Rotation},
+    lasers::{Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 
-pub struct ReflectorPlugin;
+pub struct RotaterPlugin;
 
-impl Plugin for ReflectorPlugin {
+impl Plugin for RotaterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<ReflectorTile>::default());
-        app.define_merchandise::<ReflectorTile>();
+        app.add_plugins(TilePlugin::<RotaterTile>::default());
+        app.define_merchandise::<RotaterTile>();
     }
 }
 
 #[derive(Debug)]
 #[derive(Component, Reflect)]
-pub struct ReflectorTile;
+pub struct RotaterTile;
 
-impl Tile for ReflectorTile {
+impl Tile for RotaterTile {
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
     }
@@ -29,18 +29,18 @@ impl Tile for ReflectorTile {
         _entity: Entity,
         position: &Position,
         direction: &Direction,
-        _rotation: &Rotation,
+        rotation: &Rotation,
     ) -> impl Command {
-        ReflectorActivate {
+        RotaterActivate {
             position: *position,
-            direction: *direction,
+            rotation: *rotation,
         }
     }
 }
 
-impl Merchandise for ReflectorTile {
+impl Merchandise for RotaterTile {
     const PRICE: Money = Money::new(5);
-    const NAME: &'static str = "Reflector Tower";
+    const NAME: &'static str = "Rotater";
 
     fn material(asset_server: &AssetServer) -> ColorMaterial {
         let mut base = <Self as Tile>::material(asset_server);
@@ -49,13 +49,13 @@ impl Merchandise for ReflectorTile {
     }
 }
 
-pub struct ReflectorActivate {
+pub struct RotaterActivate {
     position: Position,
-    direction: Direction,
+    rotation: Rotation,
 }
 
-impl Command for ReflectorActivate {
+impl Command for RotaterActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Reflection::new(self.direction), self.position));
+        world.spawn((Rotation::new(self.rotation.get()), self.position));
     }
 }

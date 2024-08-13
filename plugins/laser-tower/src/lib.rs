@@ -1,8 +1,9 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Consumption, Direction, Laser, Position},
+    lasers::{Consumption, Direction, Laser, Position, Rotation},
     Tile, TilePlugin,
 };
 
@@ -24,7 +25,13 @@ impl Tile for LaserTower {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CRIMSON))
     }
 
-    fn activate(&self, tile: Entity, position: &Position, direction: &Direction) -> impl Command {
+    fn activate(
+        &self,
+        tile: Entity,
+        position: &Position,
+        direction: &Direction,
+        rotation: &Rotation,
+    ) -> impl Command {
         LaserTowerActivate {
             tile,
             position: *position,
@@ -53,7 +60,11 @@ pub struct LaserTowerActivate {
 
 impl Command for LaserTowerActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Consumption::bundle(self.tile, Direction::ALL.to_vec(), self.position)));
+        world.spawn(Consumption::bundle(
+            self.tile,
+            Direction::ALL.to_vec(),
+            self.position,
+        ));
         world.spawn((Laser, self.position, self.direction));
     }
 }
@@ -61,13 +72,14 @@ impl Command for LaserTowerActivate {
 #[derive(Clone, Debug)]
 pub struct LaserTowerOnHit {
     tile: Entity,
-    // strength: Entity,
+    strength: usize,
 }
 
 impl Command for LaserTowerOnHit {
-    fn apply(self, _world: &mut World) {
-        // world
-        // .get_mut::<Health>()
-        // .expect("Laser tower to have Health");
+    fn apply(self, world: &mut World) {
+        let mut laser_tower_health = world
+            .get_mut::<Health>(self.tile)
+            .expect("Laser tower to have Health");
+        **laser_tower_health -= self.strength;
     }
 }

@@ -2,7 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Amplification, Direction, Position},
+    lasers::{Amplification, Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 
@@ -29,6 +29,7 @@ impl Tile for AmplifierTile {
         _entity: Entity,
         position: &Position,
         _direction: &Direction,
+        _rotation: &Rotation,
     ) -> impl Command {
         AmplifierActivate {
             position: *position,

@@ -1,5 +1,3 @@
-use std::fmt::Error;
-
 use bevy::prelude::*;
 use hexx::*;
 
@@ -23,12 +21,16 @@ impl LaserPlugin {
                 &Position,
                 Option<&Refraction>,
                 Option<&Reflection>,
+                Option<&YReflection>,
+                Option<&Rotation>,
                 Option<&Amplification>,
                 Option<&Consumption>,
             ),
             Or<(
                 With<Refraction>,
                 With<Reflection>,
+                With<YReflection>,
+                With<Rotation>,
                 With<Amplification>,
                 With<Consumption>,
             )>,
@@ -50,10 +52,18 @@ impl LaserPlugin {
                     current_position.neighbor(current_direction.as_hex()).into();
                 path.push(next_position);
 
-                if let Some((collider, _, refraction, reflection, amplification, consumption)) =
-                    colliders
-                        .iter()
-                        .find(|(_, position, _, _, _, _)| **position == next_position)
+                if let Some((
+                    collider,
+                    _,
+                    refraction,
+                    reflection,
+                    y_reflection,
+                    rotation,
+                    amplification,
+                    consumption,
+                )) = colliders
+                    .iter()
+                    .find(|(_, position, _, _, _, _, _, _)| **position == next_position)
                 {
                     if let Some(refracted_direction) =
                         refraction.and_then(|refraction| refraction.refract(current_direction))
@@ -64,6 +74,12 @@ impl LaserPlugin {
                         reflection.and_then(|reflection| reflection.reflect(current_direction))
                     {
                         current_direction = reflected_direction;
+                    }
+                    if let Some(y_reflection) = y_reflection {
+                        current_direction = y_reflection.reflect(current_direction);
+                    }
+                    if let Some(rotation) = rotation {
+                        current_direction = rotation.rotate(current_direction);
                     }
                     if let Some(amplification) = amplification {
                         strength += **amplification;
@@ -156,59 +172,47 @@ impl Direction {
         }
     }
 
+    pub fn hex_to_dir(hex_direction: &EdgeDirection) -> Self {
+        match *hex_direction {
+            EdgeDirection::FLAT_NORTH => Self::North,
+            EdgeDirection::FLAT_SOUTH => Self::South,
+            EdgeDirection::FLAT_NORTH_EAST => Self::Northeast,
+            EdgeDirection::FLAT_SOUTH_EAST => Self::Southeast,
+            EdgeDirection::FLAT_NORTH_WEST => Self::Northwest,
+            EdgeDirection::FLAT_SOUTH_WEST => Self::Southwest,
+            _ => Self::North, // Should never occur since usage will always have a modded `EdgeDirection`
+                              // that falls into the above categories - maybe should have an error handling instead though?
+        }
+    }
+
     pub fn opposite(&self) -> Self {
-        match self {
-            Self::North => Self::South,
-            Self::South => Self::North,
-            Self::Northeast => Self::Southwest,
-            Self::Southeast => Self::Northwest,
-            Self::Northwest => Self::Southeast,
-            Self::Southwest => Self::Northeast,
-        }
+        Self::hex_to_dir(&self.as_hex().const_neg())
     }
 
-    pub fn left(&self) -> Self {
-        match self {
-            Self::North => Self::Northwest,
-            Self::South => Self::Southeast,
-            Self::Northeast => Self::North,
-            Self::Southeast => Self::Northeast,
-            Self::Northwest => Self::Southwest,
-            Self::Southwest => Self::South,
-        }
+    pub fn counterclockwise(&self, offset: u8) -> Self {
+        Self::hex_to_dir(&self.as_hex().rotate_ccw(offset))
     }
 
-    pub fn right(&self) -> Self {
-        match self {
-            Self::North => Self::Northeast,
-            Self::South => Self::Southwest,
-            Self::Northeast => Self::Southeast,
-            Self::Southeast => Self::South,
-            Self::Northwest => Self::North,
-            Self::Southwest => Self::Northwest,
-        }
+    pub fn clockwise(&self, offset: u8) -> Self {
+        Self::hex_to_dir(&self.as_hex().rotate_cw(offset))
+    }
+
+    // Returns the number of clockwise steps around hexagon to reach self from start
+    pub fn steps_between(&self, start: Self) -> u8 {
+        (self.as_hex().index() + 6 - start.as_hex().index()) % 6
     }
 
     pub fn front_directions(&self) -> [Self; 3] {
-        match self {
-            Self::North => [Self::Northeast, Self::North, Self::Northwest],
-            Self::South => [Self::Southwest, Self::South, Self::Southeast],
-            Self::Northeast => [Self::Southeast, Self::Northeast, Self::North],
-            Self::Southeast => [Self::South, Self::Southeast, Self::Northeast],
-            Self::Northwest => [Self::North, Self::Northwest, Self::Southwest],
-            Self::Southwest => [Self::Northwest, Self::Southwest, Self::South],
-        }
+        [self.clockwise(1), *self, self.counterclockwise(1)]
     }
 
     pub fn back_directions(&self) -> [Self; 3] {
-        match self {
-            Self::North => [Self::Southwest, Self::South, Self::Southeast],
-            Self::South => [Self::Northeast, Self::North, Self::Northwest],
-            Self::Northeast => [Self::Northwest, Self::Southwest, Self::South],
-            Self::Southeast => [Self::North, Self::Northwest, Self::Southwest],
-            Self::Northwest => [Self::South, Self::Southeast, Self::Northeast],
-            Self::Southwest => [Self::Southeast, Self::Northeast, Self::North],
-        }
+        let opposite_direction = self.opposite();
+        [
+            opposite_direction.clockwise(1),
+            opposite_direction,
+            opposite_direction.counterclockwise(1),
+        ]
     }
 }
 
@@ -257,15 +261,67 @@ impl Reflection {
     }
 
     pub fn reflect(&self, incoming: Direction) -> Option<Direction> {
-        if incoming == self.facing.opposite() {
-            Some(self.facing)
-        } else if incoming == self.facing.left().opposite() {
-            Some(self.facing.right())
-        } else if incoming == self.facing.right().opposite() {
-            Some(self.facing.left())
+        let opposite = self.facing.opposite();
+        if incoming == opposite.counterclockwise(1) {
+            Some(opposite.clockwise(1))
+        } else if incoming == opposite.clockwise(1) {
+            Some(opposite.counterclockwise(1))
+        } else if incoming == self.facing.counterclockwise(1) {
+            Some(self.facing.clockwise(1))
+        } else if incoming == self.facing.clockwise(1) {
+            Some(self.facing.counterclockwise(1))
         } else {
             None
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+#[derive(Component, Reflect)]
+pub enum YReflection {
+    #[default]
+    LeftTilt, // Represents a left-tilted "Y" inscribed in the hex
+    RightTilt, // A right-tilted "Y" in the hex, the other possible orientation
+}
+
+impl YReflection {
+    pub fn reflect(&self, incoming: Direction) -> Direction {
+        match self {
+            YReflection::RightTilt => match incoming {
+                Direction::North => Direction::Northeast,
+                Direction::South => Direction::Southeast,
+                Direction::Northeast => Direction::North,
+                Direction::Southeast => Direction::South,
+                Direction::Northwest => Direction::Southwest,
+                Direction::Southwest => Direction::Northwest,
+            },
+            YReflection::LeftTilt => match incoming {
+                Direction::North => Direction::Northwest,
+                Direction::South => Direction::Southwest,
+                Direction::Northeast => Direction::Southeast,
+                Direction::Southeast => Direction::Northeast,
+                Direction::Northwest => Direction::North,
+                Direction::Southwest => Direction::South,
+            },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+#[derive(Component, Reflect)]
+pub struct Rotation(u8);
+
+impl Rotation {
+    pub fn new(offset: u8) -> Self {
+        Rotation(offset)
+    }
+
+    pub fn get(&self) -> u8 {
+        self.0
+    }
+
+    fn rotate(&self, incoming: Direction) -> Direction {
+        incoming.counterclockwise(self.get())
     }
 }
 

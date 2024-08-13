@@ -3,7 +3,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Consumption, Direction, Position, Refraction},
+    lasers::{Consumption, Direction, Position, Refraction, Rotation},
     Tile, TilePlugin,
 };
 
@@ -25,7 +25,13 @@ impl Tile for RefractorTile {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CORNFLOWER_BLUE))
     }
 
-    fn activate(&self, entity: Entity, position: &Position, direction: &Direction) -> impl Command {
+    fn activate(
+        &self,
+        entity: Entity,
+        position: &Position,
+        direction: &Direction,
+        _rotation: &Rotation,
+    ) -> impl Command {
         RefractorActivate {
             tile: entity,
             position: *position,

@@ -2,7 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Direction, Position},
+    lasers::{Consumption, Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 pub struct HQPlugin;
@@ -27,6 +27,7 @@ impl Tile for HQTile {
         entity: Entity,
         position: &Position,
         _direction: &Direction,
+        _rotation: &Rotation,
     ) -> impl Command {
         HQActivate {
             tile: entity,
