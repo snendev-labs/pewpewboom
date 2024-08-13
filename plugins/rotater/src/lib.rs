@@ -28,7 +28,7 @@ impl Tile for RotaterTile {
         &self,
         _entity: Entity,
         position: &Position,
-        direction: &Direction,
+        _direction: &Direction,
         rotation: &Rotation,
     ) -> impl Command {
         RotaterActivate {
