@@ -6,6 +6,7 @@ resolver = "2"
 # plugins
 amplifier = { path = "plugins/amplifier" }
 camera = { path = "plugins/camera" }
+entropy = { path = "plugins/entropy" }
 game_loop = { path = "plugins/game-loop" }
 health = { path = "plugins/health" }
 hq = { path = "plugins/hq" }
