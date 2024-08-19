@@ -6,13 +6,14 @@ resolver = "2"
 # plugins
 amplifier = { path = "plugins/amplifier" }
 camera = { path = "plugins/camera" }
-entropy = { path = "plugins/entropy" }
 game_loop = { path = "plugins/game-loop" }
 health = { path = "plugins/health" }
 hq = { path = "plugins/hq" }
 lasers = { path = "plugins/lasers" }
 laser_tower = { path = "plugins/laser-tower" }
+map_generator = { path = "plugins/map_generator" }
 merchandise = { path = "plugins/merchandise" }
+mountain = { path = "plugins/mountain" }
 refractor = { path = "plugins/refractor" }
 resource_deposit = { path = "plugins/resource_deposit" }
 shop = { path = "plugins/shop" }
