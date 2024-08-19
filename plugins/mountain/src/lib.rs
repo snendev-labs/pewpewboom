@@ -2,7 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Direction, Position},
+    lasers::{Consumption, Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 pub struct MountainPlugin;
@@ -27,6 +27,7 @@ impl Tile for MountainTile {
         entity: Entity,
         position: &Position,
         _direction: &Direction,
+        _rotation: &Rotation,
     ) -> impl Command {
         MountainActivate {
             tile: entity,
@@ -49,7 +50,11 @@ pub struct MountainActivate {
 
 impl Command for MountainActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Consumption::new(self.tile), self.position));
+        world.spawn(Consumption::bundle(
+            self.tile,
+            Direction::ALL.to_vec(),
+            self.position,
+        ));
     }
 }
 

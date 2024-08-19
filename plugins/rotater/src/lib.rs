@@ -2,26 +2,26 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Amplification, Direction, Position, Rotation},
+    lasers::{Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 
-pub struct AmplifierPlugin;
+pub struct RotaterPlugin;
 
-impl Plugin for AmplifierPlugin {
+impl Plugin for RotaterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<AmplifierTile>::default());
-        app.define_merchandise::<AmplifierTile>();
+        app.add_plugins(TilePlugin::<RotaterTile>::default());
+        app.define_merchandise::<RotaterTile>();
     }
 }
 
 #[derive(Debug)]
 #[derive(Component, Reflect)]
-pub struct AmplifierTile;
+pub struct RotaterTile;
 
-impl Tile for AmplifierTile {
+impl Tile for RotaterTile {
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_ORANGE))
+        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
     }
 
     fn activate(
@@ -29,17 +29,18 @@ impl Tile for AmplifierTile {
         _entity: Entity,
         position: &Position,
         _direction: &Direction,
-        _rotation: &Rotation,
+        rotation: &Rotation,
     ) -> impl Command {
-        AmplifierActivate {
+        RotaterActivate {
             position: *position,
+            rotation: *rotation,
         }
     }
 }
 
-impl Merchandise for AmplifierTile {
-    const PRICE: Money = Money::new(3);
-    const NAME: &'static str = "Amplifier Tower";
+impl Merchandise for RotaterTile {
+    const PRICE: Money = Money::new(5);
+    const NAME: &'static str = "Rotater";
 
     fn material(asset_server: &AssetServer) -> ColorMaterial {
         let mut base = <Self as Tile>::material(asset_server);
@@ -48,14 +49,13 @@ impl Merchandise for AmplifierTile {
     }
 }
 
-pub struct AmplifierActivate {
+pub struct RotaterActivate {
     position: Position,
+    rotation: Rotation,
 }
 
-impl Command for AmplifierActivate {
+impl Command for RotaterActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Amplification::new(1), self.position.clone()));
+        world.spawn((Rotation::new(self.rotation.get()), self.position));
     }
 }
-
-// on-hit for amplifier later

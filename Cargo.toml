@@ -14,11 +14,14 @@ laser_tower = { path = "plugins/laser-tower" }
 map_generator = { path = "plugins/map_generator" }
 merchandise = { path = "plugins/merchandise" }
 mountain = { path = "plugins/mountain" }
+reflector = { path = "plugins/reflector" }
 refractor = { path = "plugins/refractor" }
+rotater = { path = "plugins/rotater" }
 resource_deposit = { path = "plugins/resource_deposit" }
 shop = { path = "plugins/shop" }
 tilemap = { path = "plugins/tilemap" }
 tiles = { path = "plugins/tiles" }
+y_reflector = { path = "plugins/y_reflector" }
 
 # bevy
 bevy = { version = "0.14", default-features = false }
@@ -50,10 +53,13 @@ health = { workspace = true }
 hq = { workspace = true }
 laser_tower = { workspace = true }
 merchandise = { workspace = true }
+reflector = { workspace = true }
 refractor = { workspace = true }
+rotater = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }
 tiles = { workspace = true }
+y_reflector = { workspace = true }
 
 # bevy
 bevy = { workspace = true, features = ["bevy_winit"] }

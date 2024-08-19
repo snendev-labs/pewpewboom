@@ -1,8 +1,9 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Direction, Position, Refraction},
+    lasers::{Consumption, Direction, Position, Refraction, Rotation},
     Tile, TilePlugin,
 };
 
@@ -21,19 +22,28 @@ pub struct RefractorTile;
 
 impl Tile for RefractorTile {
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
+        ColorMaterial::from_color(Color::Srgba(palettes::css::CORNFLOWER_BLUE))
     }
 
     fn activate(
         &self,
-        _entity: Entity,
+        entity: Entity,
         position: &Position,
         direction: &Direction,
+        _rotation: &Rotation,
     ) -> impl Command {
         RefractorActivate {
+            tile: entity,
             position: *position,
             direction: *direction,
         }
+    }
+
+    fn on_hit(&self, entity: Entity, strength: usize, _shooter: Entity) -> Option<impl Command> {
+        Some(RefractorOnHit {
+            tile: entity,
+            strength,
+        })
     }
 }
 
@@ -49,14 +59,34 @@ impl Merchandise for RefractorTile {
 }
 
 pub struct RefractorActivate {
+    tile: Entity,
     position: Position,
     direction: Direction,
 }
 
 impl Command for RefractorActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Refraction::new(self.direction), self.position.clone()));
+        world.spawn((
+            Refraction::new(self.direction),
+            Consumption::bundle(
+                self.tile,
+                self.direction.back_directions().to_vec(),
+                self.position.clone(),
+            ),
+        ));
     }
 }
 
-// Possible on-hit I we want destroyable refractorss ...
+pub struct RefractorOnHit {
+    tile: Entity,
+    strength: usize,
+}
+
+impl Command for RefractorOnHit {
+    fn apply(self, world: &mut World) {
+        let mut consumer_health = world
+            .get_mut::<Health>(self.tile)
+            .expect("RefractorOnHit entity should have Health component added to it");
+        **consumer_health -= self.strength;
+    }
+}
