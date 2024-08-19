@@ -5,4 +5,8 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-entropy = { workspace = true }
+mountain = { workspace = true }
+tiles = { workspace = true }
+tilemap = { workspace = true }
+
+rand = "0.8"

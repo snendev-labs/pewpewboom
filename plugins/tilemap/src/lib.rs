@@ -249,6 +249,9 @@ impl EmptyTileMaterial {
 pub struct Tile(Hex);
 
 impl Tile {
+    pub fn new(x: i32, y: i32) -> Self {
+        Tile(Hex { x, y })
+    }
     fn mesh(hex_layout: &HexLayout) -> Mesh {
         let mesh_info = PlaneMeshBuilder::new(hex_layout)
             .facing(Vec3::Z)

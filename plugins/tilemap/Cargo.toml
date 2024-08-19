@@ -10,6 +10,8 @@ bevy = { workspace = true, features = [
     "bevy_asset",
     "bevy_color",
     "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
     "default_font",
 ] }
 hexx = { workspace = true }
