@@ -5,7 +5,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use health::Health;
 use merchandise::Money;
 use tiles::{
-    lasers::{Consumption, Direction, Position},
+    lasers::{Consumption, Direction, Position, Rotation},
     Tile, TilePlugin,
 };
 
@@ -31,6 +31,7 @@ impl Tile for ResourceDepositTile {
         entity: Entity,
         position: &Position,
         _direction: &Direction,
+        _rotation: &Rotation,
     ) -> impl Command {
         ResourceDepositActivate {
             tile: entity,
@@ -54,7 +55,11 @@ pub struct ResourceDepositActivate {
 
 impl Command for ResourceDepositActivate {
     fn apply(self, world: &mut World) {
-        world.spawn((Consumption::new(self.tile), self.position.clone()));
+        world.spawn(Consumption::bundle(
+            self.tile,
+            Direction::ALL.to_vec(),
+            self.position.clone(),
+        ));
     }
 }
 

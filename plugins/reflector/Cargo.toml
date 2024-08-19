@@ -1,5 +1,5 @@
 [package]
-name = "refractor"
+name = "reflector"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,3 @@ edition = "2021"
 bevy = { workspace = true }
 tiles = { workspace = true }
 merchandise = { workspace = true }
-health = { workspace = true }
