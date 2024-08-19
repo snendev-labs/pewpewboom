@@ -180,8 +180,7 @@ impl Direction {
             EdgeDirection::FLAT_SOUTH_EAST => Self::Southeast,
             EdgeDirection::FLAT_NORTH_WEST => Self::Northwest,
             EdgeDirection::FLAT_SOUTH_WEST => Self::Southwest,
-            _ => Self::North, // Should never occur since usage will always have a modded `EdgeDirection`
-                              // that falls into the above categories - maybe should have an error handling instead though?
+            _ => unreachable!("Edge direction should already produce something modded to within 0..6 in its inner field, so the previous cases should be comprehensive"),
         }
     }
 
@@ -286,23 +285,19 @@ pub enum YReflection {
 
 impl YReflection {
     pub fn reflect(&self, incoming: Direction) -> Direction {
-        match self {
-            YReflection::RightTilt => match incoming {
-                Direction::North => Direction::Northeast,
-                Direction::South => Direction::Southeast,
-                Direction::Northeast => Direction::North,
-                Direction::Southeast => Direction::South,
-                Direction::Northwest => Direction::Southwest,
-                Direction::Southwest => Direction::Northwest,
-            },
-            YReflection::LeftTilt => match incoming {
-                Direction::North => Direction::Northwest,
-                Direction::South => Direction::Southwest,
-                Direction::Northeast => Direction::Southeast,
-                Direction::Southeast => Direction::Northeast,
-                Direction::Northwest => Direction::North,
-                Direction::Southwest => Direction::South,
-            },
+        match (self, incoming) {
+            (YReflection::RightTilt, Direction::North) => Direction::Northeast,
+            (YReflection::RightTilt, Direction::South) => Direction::Southeast,
+            (YReflection::RightTilt, Direction::Northeast) => Direction::North,
+            (YReflection::RightTilt, Direction::Southeast) => Direction::South,
+            (YReflection::RightTilt, Direction::Northwest) => Direction::Southwest,
+            (YReflection::RightTilt, Direction::Southwest) => Direction::Northwest,
+            (YReflection::LeftTilt, Direction::North) => Direction::Northwest,
+            (YReflection::LeftTilt, Direction::South) => Direction::Southwest,
+            (YReflection::LeftTilt, Direction::Northeast) => Direction::Southeast,
+            (YReflection::LeftTilt, Direction::Southeast) => Direction::Northeast,
+            (YReflection::LeftTilt, Direction::Northwest) => Direction::North,
+            (YReflection::LeftTilt, Direction::Southwest) => Direction::South,
         }
     }
 }
