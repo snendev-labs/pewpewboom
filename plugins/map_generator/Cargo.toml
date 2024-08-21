@@ -5,8 +5,12 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
+game_loop = { workspace = true}
 mountain = { workspace = true }
 tiles = { workspace = true }
 tilemap = { workspace = true }
 
+#stdx
+itertools = "0.13"
 rand = "0.8"
+

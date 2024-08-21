@@ -244,7 +244,7 @@ impl EmptyTileMaterial {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct Tile(Hex);
 

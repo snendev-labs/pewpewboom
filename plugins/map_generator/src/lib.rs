@@ -1,16 +1,20 @@
-use bevy::prelude::*;
+use std::collections::HashSet;
 
-use mountain::MountainTile;
+use bevy::prelude::*;
+use itertools::Itertools;
 use rand::thread_rng;
 
+use game_loop::SpawnGame;
+use mountain::MountainTile;
 use tilemap::Tile;
 
 pub struct MapGeneratorPlugin;
 
 impl Plugin for MapGeneratorPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(EntropyMap::generate([-10, 10], [-10, 10], 6, 6))
-            .add_systems(Update, (Self::spawn_mountains).in_set(MapGeneratorSystems));
+        app.add_systems(Update, (Self::spawn_mountains).in_set(MapGeneratorSystems));
+
+        app.observe(Self::observer);
     }
 }
 
@@ -18,13 +22,25 @@ impl MapGeneratorPlugin {
     fn spawn_mountains(
         mut commands: Commands,
         tiles: Query<(Entity, &Tile)>,
-        entropy: Res<EntropyMap>,
+        obstacles: Query<&ObstacleMap>,
     ) {
+        let obstacle_map = obstacles.single();
         for (entity, tile) in &tiles {
-            if entropy.hit(*tile) {
+            if obstacle_map.contains(tile) {
                 commands.entity(entity).insert(MountainTile);
             }
         }
+    }
+
+    fn observer(trigger: Trigger<SpawnGame>, mut commands: Commands) {
+        let game_instance = trigger.event().instance;
+        let map_radius = trigger.event().radius as i32;
+        commands.entity(game_instance).insert(ObstacleMap::generate(
+            [-map_radius, map_radius],
+            [-map_radius, map_radius],
+            5,
+            5,
+        ));
     }
 }
 
@@ -32,21 +48,11 @@ impl MapGeneratorPlugin {
 #[derive(SystemSet)]
 pub struct MapGeneratorSystems;
 
-#[derive(Clone, Debug)]
-#[derive(Resource)]
-pub struct EntropyMap {
-    horizontal: Vec<[i32; 2]>,
-    vertical: Vec<[i32; 2]>,
-}
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Component, Deref)]
+pub struct ObstacleMap(HashSet<Tile>);
 
-impl EntropyMap {
-    pub fn new(horizontal: Vec<[i32; 2]>, vertical: Vec<[i32; 2]>) -> Self {
-        EntropyMap {
-            horizontal,
-            vertical,
-        }
-    }
-
+impl ObstacleMap {
     pub fn generate(
         horizontal_range: [i32; 2],
         vertical_range: [i32; 2],
@@ -57,7 +63,7 @@ impl EntropyMap {
 
         let mut horizontal = rand::seq::index::sample(
             &mut rng,
-            (horizontal_range[1] - horizontal_range[0])
+            (horizontal_range[1] - horizontal_range[0] + 1) // inclusive of the interval limits
                 .try_into()
                 .unwrap(),
             horizontal_samples,
@@ -74,7 +80,9 @@ impl EntropyMap {
 
         let mut vertical = rand::seq::index::sample(
             &mut rng,
-            (vertical_range[1] - vertical_range[0]).try_into().unwrap(),
+            (vertical_range[1] - vertical_range[0] + 1)
+                .try_into()
+                .unwrap(),
             vertical_samples,
         )
         .iter()
@@ -87,64 +95,43 @@ impl EntropyMap {
             .map(|chunk| [chunk[0], chunk[1]])
             .collect::<Vec<_>>();
 
-        EntropyMap {
-            horizontal,
-            vertical,
-        }
-    }
+        let mut hit_tiles: HashSet<Tile> = HashSet::new();
 
-    pub fn hit(&self, tile: Tile) -> bool {
-        self.horizontal
-            .iter()
-            .any(|[lower, upper]| *lower <= tile.x && tile.x <= *upper)
-            && self
-                .vertical
-                .iter()
-                .any(|[lower, upper]| *lower <= tile.y && tile.y <= *upper)
+        for x_interval in horizontal {
+            for y_interval in &vertical {
+                let product = (x_interval[0]..=x_interval[1])
+                    .cartesian_product(y_interval[0]..=y_interval[1])
+                    .map(|(x, y)| Tile::new(x, y));
+                hit_tiles.extend(product)
+            }
+        }
+
+        ObstacleMap(hit_tiles)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashSet;
+
+    use super::{ObstacleMap, Tile};
 
     #[test]
-    fn sorted_entropy() {
-        let entropy_map = EntropyMap::generate([0, 10], [0, 10], 5, 5);
-        let horizontal = entropy_map
-            .horizontal
+    fn test_generating() {
+        let test_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2);
+
+        let map: HashSet<Tile> = vec![(0, 0), (0, 1), (1, 0), (1, 1)]
             .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
-        let vertical = entropy_map
-            .vertical
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
-        let mut sorted_horizontal = horizontal.clone();
-        sorted_horizontal.sort();
-        let mut sorted_vertical = vertical.clone();
-        sorted_vertical.sort();
-        assert!(horizontal == sorted_horizontal && vertical == sorted_vertical)
+            .map(|(x, y)| Tile::new(x, y))
+            .collect();
+        let map = ObstacleMap(map);
+        assert_eq!(test_map, map)
     }
 
     #[test]
-    fn filled_entropy_map() {
-        let entropy_map = EntropyMap::generate([0, 6], [0, 6], 6, 6);
-        eprintln!("{:?}", entropy_map.horizontal);
-        eprintln!("{:?}", entropy_map.vertical);
-        assert_eq!(
-            (entropy_map.horizontal, entropy_map.vertical),
-            (vec![[0, 1], [2, 3], [4, 5]], vec![[0, 1], [2, 3], [4, 5]])
-        )
-    }
+    fn test_hit() {
+        let test_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2);
 
-    #[test]
-    fn hit_tile() {
-        let horizontal = vec![[0, 2]];
-        let vertical = vec![[0, 3]];
-        let entropy_map = EntropyMap::new(horizontal, vertical);
-
-        assert!(entropy_map.hit(Tile::new(1, 1)))
+        assert!(test_map.contains(&Tile::new(0, 0)))
     }
 }
