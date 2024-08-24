@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ops::RangeInclusive};
 
 use bevy::prelude::*;
 use itertools::Itertools;
 use rand::thread_rng;
 
+use entropy::{Entropy, EntropyBundle};
 use game_loop::SpawnGame;
 use mountain::MountainTile;
 use tilemap::Tile;
@@ -32,15 +33,19 @@ impl MapGeneratorPlugin {
         }
     }
 
-    fn observer(trigger: Trigger<SpawnGame>, mut commands: Commands) {
+    fn observer(trigger: Trigger<SpawnGame>, mut commands: Commands, entropy: Query<&Entropy>) {
         let game_instance = trigger.event().instance;
         let map_radius = trigger.event().radius as i32;
-        commands.entity(game_instance).insert(ObstacleMap::generate(
-            [-map_radius, map_radius],
-            [-map_radius, map_radius],
-            5,
-            5,
-        ));
+
+        if let Some(entropy) = entropy.get(game_instance) {
+            commands.entity(game_instance).insert(ObstacleMap::generate(
+                [-map_radius, map_radius],
+                [-map_radius, map_radius],
+                5,
+                5,
+                entropy,
+            ));
+        }
     }
 }
 
@@ -54,45 +59,40 @@ pub struct ObstacleMap(HashSet<Tile>);
 
 impl ObstacleMap {
     pub fn generate(
-        horizontal_range: [i32; 2],
-        vertical_range: [i32; 2],
+        horizontal_range: RangeInclusive<i32>,
+        vertical_range: RangeInclusive<i32>,
         horizontal_samples: usize, // Should be less than the length of the respective sampling interval
         vertical_samples: usize, // Should be less than the length of the respective sampling interval
+        entropy: EntropyBundle,
     ) -> Self {
         let mut rng = thread_rng();
 
-        let mut horizontal = rand::seq::index::sample(
-            &mut rng,
-            (horizontal_range[1] - horizontal_range[0] + 1) // inclusive of the interval limits
-                .try_into()
-                .unwrap(),
-            horizontal_samples,
-        )
-        .iter()
-        .map(|num| num as i32 + horizontal_range[0])
-        .collect::<Vec<i32>>();
+        let mut horizontal = entropy.sample_from_range(horizontal_range, horizontal_samples);
         horizontal.sort();
 
         let horizontal = horizontal
             .chunks_exact(2)
-            .map(|chunk| [chunk[0], chunk[1]])
+            .filter_map(|chunk| {
+                if chunk[0] != chunk[1] {
+                    Some([chunk[0], chunk[1]])
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
-        let mut vertical = rand::seq::index::sample(
-            &mut rng,
-            (vertical_range[1] - vertical_range[0] + 1)
-                .try_into()
-                .unwrap(),
-            vertical_samples,
-        )
-        .iter()
-        .map(|num| num as i32 + vertical_range[0])
-        .collect::<Vec<i32>>();
+        let mut vertical = entropy.sample_from_range(vertical_range, vertical_samples);
         vertical.sort();
 
         let vertical = vertical
             .chunks_exact(2)
-            .map(|chunk| [chunk[0], chunk[1]])
+            .filter_map(|chunk| {
+                if (chunk[0] != chunk[1]) {
+                    Some([chunk[0], chunk[1]])
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         let mut hit_tiles: HashSet<Tile> = HashSet::new();
@@ -114,7 +114,19 @@ impl ObstacleMap {
 mod tests {
     use std::collections::HashSet;
 
-    use super::{ObstacleMap, Tile};
+    use bevy::prelude::App;
+
+    use entropy::{EntropyPlugin, GlobalEntropy};
+
+    use super::{MapGeneratorPlugin, ObstacleMap, Tile};
+
+    fn test_app() -> App {
+        let mut app = App::new();
+        app.add_plugins(EntropyPlugin::default());
+        app.add_plugins(MapGeneratorPlugin);
+
+        app
+    }
 
     #[test]
     fn test_generating() {
@@ -130,8 +142,12 @@ mod tests {
 
     #[test]
     fn test_hit() {
-        let test_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2);
+        let app = test_app();
+        if let Some(entropy) = app.world().get_resource_mut::<GlobalEntropy>() {
+            let entropy_bundle = EntropyBundle::new(entropy);
+            let seeded_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2, entropy_bundle);
 
-        assert!(test_map.contains(&Tile::new(0, 0)))
+            assert!(test_map.contains(&Tile::new(0, 0)))
+        }
     }
 }

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
+entropy = { workspace = true }
 game_loop = { workspace = true}
 mountain = { workspace = true }
 tiles = { workspace = true }

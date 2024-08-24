@@ -1,9 +1,17 @@
 use std::marker::PhantomData;
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{
+    ecs::world::Command,
+    prelude::{
+        info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Entity,
+        EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Plugin, Query,
+        RemovedComponents, Res, ResMut, SystemSet, Update, World,
+    },
+};
 
 use game_loop::{GamePhase, InGame};
 use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation};
+use tilemap::EmptyTileMaterial;
 
 pub use lasers;
 
@@ -55,8 +63,10 @@ where
         app.add_systems(
             Update,
             (
+                Self::add_tile_material.in_set(TileSystems::Add),
                 Self::activate_tiles.in_set(TileSystems::Activate),
                 Self::handle_hit_tiles.in_set(TileSystems::OnHit),
+                Self::remove_tile_material.in_set(TileSystems::Remove),
             ),
         );
     }
@@ -115,11 +125,35 @@ where
             }
         }
     }
+
+    fn add_tile_material(
+        mut tile_materials: Query<&mut Handle<ColorMaterial>, Added<T>>,
+        mut assets: ResMut<Assets<ColorMaterial>>,
+        asset_server: Res<AssetServer>,
+    ) {
+        for mut material in &mut tile_materials {
+            *material = assets.add(T::material(&asset_server));
+        }
+    }
+
+    fn remove_tile_material(
+        mut removed_tile: RemovedComponents<T>,
+        mut tile_materials: Query<&mut Handle<ColorMaterial>>,
+        empty_tile_material: Res<EmptyTileMaterial>,
+    ) {
+        for tile in removed_tile.read() {
+            if let Ok(mut tile_material) = tile_materials.get_mut(tile) {
+                *tile_material = empty_tile_material.clone();
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[derive(SystemSet)]
 pub enum TileSystems {
+    Add,
     Activate,
     OnHit,
+    Remove,
 }

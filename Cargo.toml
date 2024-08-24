@@ -6,6 +6,7 @@ resolver = "2"
 # plugins
 amplifier = { path = "plugins/amplifier" }
 camera = { path = "plugins/camera" }
+entropy = { path = "plugins/entropy" }
 game = { path = "plugins/game" }
 game_loop = { path = "plugins/game-loop" }
 health = { path = "plugins/health" }
@@ -51,6 +52,7 @@ edition = "2021"
 # plugins
 amplifier = { workspace = true }
 camera = { workspace = true }
+entropy = { workspace = true }
 game_loop = { workspace = true }
 health = { workspace = true }
 hq = { workspace = true }
