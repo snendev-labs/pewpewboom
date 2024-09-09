@@ -2315,11 +2315,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "laser_visuals"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "lasers",
+ "tilemap",
+]
+
+[[package]]
 name = "lasers"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_gizmos",
  "hexx",
+ "tilemap",
 ]
 
 [[package]]
@@ -2459,7 +2470,9 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_anyhow_alert",
+ "game_loop",
  "thiserror",
+ "tiles",
 ]
 
 [[package]]
@@ -3642,6 +3655,7 @@ dependencies = [
  "bevy",
  "game_loop",
  "lasers",
+ "tilemap",
 ]
 
 [[package]]
