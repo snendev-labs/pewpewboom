@@ -20,6 +20,13 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
+    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+        ReflectorSpawn {
+            position: *position,
+            direction: *direction,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
     }
@@ -46,6 +53,17 @@ impl Merchandise for ReflectorTile {
         let mut base = <Self as Tile>::material(asset_server);
         base.color.set_alpha(0.6);
         base
+    }
+}
+
+pub struct ReflectorSpawn {
+    position: Position,
+    direction: Direction,
+}
+
+impl Command for ReflectorSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((ReflectorTile, self.position));
     }
 }
 

@@ -20,6 +20,13 @@ impl Plugin for RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
+    fn spawn(position: &Position, _direction: &Direction, rotation: &Rotation) -> impl Command {
+        RotaterSpawn {
+            position: *position,
+            rotation: *rotation,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
     }
@@ -46,6 +53,17 @@ impl Merchandise for RotaterTile {
         let mut base = <Self as Tile>::material(asset_server);
         base.color.set_alpha(0.6);
         base
+    }
+}
+
+pub struct RotaterSpawn {
+    position: Position,
+    rotation: Rotation,
+}
+
+impl Command for RotaterSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((RotaterTile, self.position));
     }
 }
 

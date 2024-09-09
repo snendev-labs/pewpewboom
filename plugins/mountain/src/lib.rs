@@ -18,6 +18,12 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
+    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+        MountainSpawn {
+            position: *position,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::BEIGE))
     }
@@ -40,6 +46,16 @@ impl Tile for MountainTile {
             tile: entity,
             strength,
         })
+    }
+}
+
+pub struct MountainSpawn {
+    position: Position,
+}
+
+impl Command for MountainSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((MountainTile, self.position));
     }
 }
 

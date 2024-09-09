@@ -18,6 +18,12 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
+    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+        HQSpawn {
+            position: *position,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::GREEN))
     }
@@ -40,6 +46,16 @@ impl Tile for HQTile {
             tile: entity,
             strength,
         })
+    }
+}
+
+pub struct HQSpawn {
+    position: Position,
+}
+
+impl Command for HQSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((HQTile, self.position));
     }
 }
 
