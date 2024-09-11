@@ -1,4 +1,4 @@
-use bevy::{color::palettes, prelude::*};
+use bevy::{color::palettes, prelude::*, window::PrimaryWindow};
 use sickle_ui::{
     prelude::{
         LabelConfig, RadioGroup, UiBuilderExt, UiColumnExt, UiContainerExt, UiLabelExt,
@@ -17,12 +17,14 @@ pub struct ShopPlugin;
 impl Plugin for ShopPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(SickleUiPlugin);
+        app.init_resource::<CursorCapture>();
         app.add_systems(
             Update,
             (
                 Self::setup_ui,
                 Self::handle_shop_selection,
                 Self::handle_ready,
+                Self::capture_cursor,
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
                         .or_else(resource_removed::<SelectedMerch>())
@@ -185,6 +187,28 @@ impl ShopPlugin {
         *last_target = targeted_tile.as_deref().cloned();
         *last_merch = selected_merch.as_deref().cloned();
     }
+
+    fn capture_cursor(
+        mut capture: ResMut<CursorCapture>,
+        windows: Query<&Window, With<PrimaryWindow>>,
+        nodes: Query<(&Node, &GlobalTransform)>,
+    ) {
+        let Ok(window) = windows.get_single() else {
+            return;
+        };
+
+        let Some(cursor) = window.cursor_position() else {
+            return;
+        };
+
+        capture.0 = nodes.iter().any(|(node, transform)| {
+            let node_position = transform.translation().xy();
+            let half_size = 0.5 * node.size();
+            let min = node_position - half_size;
+            let max = node_position + half_size;
+            (min.x..max.x).contains(&cursor.x) && (min.y..max.y).contains(&cursor.y)
+        });
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -226,3 +250,7 @@ pub struct SelectedMerch(Merch);
 #[derive(Debug)]
 #[derive(Component)]
 pub struct ReadyButton;
+
+#[derive(Debug, Default)]
+#[derive(Resource)]
+pub struct CursorCapture(pub bool);
