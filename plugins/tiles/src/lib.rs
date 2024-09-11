@@ -62,7 +62,6 @@ where
                 Self::activate_tiles.in_set(TileSystems::Activate),
                 Self::handle_hit_tiles.in_set(TileSystems::OnHit),
                 Self::update_tile_material,
-                Self::change_tile_material,
             ),
         );
     }
@@ -188,12 +187,6 @@ where
                     *material = empty_tile_material.clone_weak();
                 }
             }
-        }
-    }
-
-    fn change_tile_material(tiles: Query<Entity, Changed<Handle<ColorMaterial>>>) {
-        for tile in &tiles {
-            info!("Material changed at {:?}", tile)
         }
     }
 }
