@@ -1,16 +1,18 @@
 use bevy::prelude::*;
 use bevy_rts_camera::*;
 
+use tilemap_3d::Tilemap;
+
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(RtsCameraPlugin);
         app.add_systems(
             Update,
             (
                 Self::attach_camera_components,
                 Self::remove_camera_components,
+                Self::attach_ground_components,
             )
                 .in_set(CameraSystems),
         );
@@ -37,6 +39,15 @@ impl CameraPlugin {
             }
         }
     }
+
+    fn attach_ground_components(
+        mut commands: Commands,
+        tilemaps: Query<Entity, (With<Tilemap>, Without<Ground>)>,
+    ) {
+        for tilemap_entity in &tilemaps {
+            commands.entity(tilemap_entity).insert(Ground);
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -51,7 +62,7 @@ pub struct PlayerCamera;
 pub struct PlayerCameraBundle {
     rts: RtsCamera,
     controls: RtsCameraControls,
-    camera: Camera2dBundle,
+    camera: Camera3dBundle,
 }
 
 impl PlayerCameraBundle {
@@ -59,8 +70,8 @@ impl PlayerCameraBundle {
         PlayerCameraBundle {
             rts: RtsCamera::default(),
             controls: RtsCameraControls::default(),
-            camera: Camera2dBundle {
-                transform: Transform::from_xyz(0., 0., 10.),
+            camera: Camera3dBundle {
+                transform: Transform::from_xyz(0., 20., 10.),
                 ..Default::default()
             },
         }

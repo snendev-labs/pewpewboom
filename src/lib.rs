@@ -8,7 +8,7 @@ pub use hq;
 pub use laser_tower;
 pub use merchandise;
 pub use refractor;
-pub use tilemap;
+pub use tilemap_3d;
 pub use tiles;
 
 pub struct PewPewBoomPlugins;
@@ -20,7 +20,7 @@ impl PluginGroup for PewPewBoomPlugins {
             .add(tiles::TilesPlugin)
             .add(merchandise::MerchPlugin)
             .add(health::HealthPlugin)
-            .add(tilemap::TilemapPlugin)
+            .add(tilemap_3d::TilemapPlugin)
             .add(camera::CameraPlugin)
             .add(shop::ShopPlugin)
     }

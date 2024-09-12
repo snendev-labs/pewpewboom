@@ -1,0 +1,13 @@
+[package]
+name = "tilemap_3d"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true, features = [
+    "bevy_asset",
+    "bevy_color",
+    "bevy_render",
+    "default_font",
+] }
+hexx = { workspace = true }

@@ -4,7 +4,8 @@ use bevy::{
 };
 
 use pewpewboom::{
-    game_loop::GameInstanceBundle, tilemap::Tilemap, PewPewBoomBuildingsPlugins, PewPewBoomPlugins,
+    game_loop::GameInstanceBundle, tilemap_3d::Tilemap, PewPewBoomBuildingsPlugins,
+    PewPewBoomPlugins,
 };
 
 fn main() {
