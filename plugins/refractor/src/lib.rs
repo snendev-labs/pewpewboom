@@ -21,6 +21,13 @@ impl Plugin for RefractorPlugin {
 pub struct RefractorTile;
 
 impl Tile for RefractorTile {
+    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+        RefractorSpawn {
+            position: *position,
+            direction: *direction,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CORNFLOWER_BLUE))
     }
@@ -55,6 +62,17 @@ impl Merchandise for RefractorTile {
         let mut base = <Self as Tile>::material(asset_server);
         base.color.set_alpha(0.6);
         base
+    }
+}
+
+pub struct RefractorSpawn {
+    position: Position,
+    direction: Direction,
+}
+
+impl Command for RefractorSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((RefractorTile, self.position));
     }
 }
 

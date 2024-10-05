@@ -20,6 +20,12 @@ impl Plugin for AmplifierPlugin {
 pub struct AmplifierTile;
 
 impl Tile for AmplifierTile {
+    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+        AmplifierSpawn {
+            position: *position,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_ORANGE))
     }
@@ -45,6 +51,16 @@ impl Merchandise for AmplifierTile {
         let mut base = <Self as Tile>::material(asset_server);
         base.color.set_alpha(0.6);
         base
+    }
+}
+
+pub struct AmplifierSpawn {
+    position: Position,
+}
+
+impl Command for AmplifierSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((AmplifierTile, self.position.clone()));
     }
 }
 
