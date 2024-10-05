@@ -4,6 +4,9 @@ use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use bevy_anyhow_alert::*;
 
+use game_loop::Player;
+use tiles::TileSpawnEvent;
+
 mod components;
 pub use components::*;
 mod registry;
@@ -25,25 +28,56 @@ impl Plugin for MerchPlugin {
         app.init_resource::<MerchMaterials>();
         app.add_systems(
             Update,
-            Self::handle_purchases.anyhow_alerts().in_set(MerchSystems),
+            (Self::spawn_shoppers, Self::handle_purchases.anyhow_alerts()).in_set(MerchSystems),
         );
     }
 }
 
 impl MerchPlugin {
+    fn spawn_shoppers(mut commands: Commands, added_players: Query<Entity, Added<Player>>) {
+        for player in &added_players {
+            commands.entity(player).insert((Shopper, Money::new(15)));
+        }
+    }
+
     fn handle_purchases(
         mut purchases: EventReader<Purchase>,
+        mut tile_spawns: EventWriter<TileSpawnEvent>,
+        registry: Res<MerchRegistry>,
         mut shoppers: Query<&mut Money, With<Shopper>>,
     ) -> ResultVec<(), PurchaseError> {
         let mut errors = vec![];
-        for Purchase { buyer, merch } in purchases.read() {
+        for Purchase {
+            buyer,
+            merch,
+            on_tile,
+        } in purchases.read()
+        {
+            info!("Handling purchase");
             let Ok(mut money) = shoppers.get_mut(*buyer) else {
                 continue;
             };
+            info!("Player money recognized");
             let cost = merch.price();
             if **money >= *cost {
-                **money = money.saturating_sub(*cost);
+                if let Some(tile_id) = registry.get_type(&merch.id()) {
+                    **money = money.saturating_sub(*cost);
+                    info!(
+                        "Tile spawn event on tile {:?} for tile type {:?}",
+                        *on_tile, *tile_id
+                    );
+                    tile_spawns.send(TileSpawnEvent {
+                        tile_id: *tile_id,
+                        on_tile: *on_tile,
+                    });
+                } else {
+                    info!("Unknown merch error");
+                    errors.push(PurchaseError::UnknownMerch {
+                        merch_id: merch.id(),
+                    })
+                }
             } else {
+                info!("Insufficient funds purchase error");
                 errors.push(PurchaseError::NotEnoughMoney {
                     shopper: *buyer,
                     cost,
@@ -69,11 +103,16 @@ pub struct MerchSystems;
 pub struct Purchase {
     buyer: Entity,
     merch: Merch,
+    on_tile: Entity,
 }
 
 impl Purchase {
-    pub fn new(buyer: Entity, merch: Merch) -> Self {
-        Purchase { buyer, merch }
+    pub fn new(buyer: Entity, merch: Merch, on_tile: Entity) -> Self {
+        Purchase {
+            buyer,
+            merch,
+            on_tile,
+        }
     }
 }
 
@@ -87,6 +126,8 @@ pub enum PurchaseError {
         cost: Money,
         money: Money,
     },
+    #[error("N")]
+    UnknownMerch { merch_id: MerchId },
 }
 
 #[derive(Debug, Default)]

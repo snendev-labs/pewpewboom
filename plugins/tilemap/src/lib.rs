@@ -56,12 +56,15 @@ impl TilemapPlugin {
             for coord in shapes::Hexagon::default().coords() {
                 let position = layout.hex_to_world_pos(coord);
                 let hex_entity = commands
-                    .spawn(TileBundle::new(
-                        Tile(coord),
-                        position,
-                        10.,
-                        tile_mesh.clone(),
-                        empty_tile_material.clone_weak(),
+                    .spawn((
+                        TileBundle::new(
+                            Tile(coord),
+                            position,
+                            10.,
+                            tile_mesh.clone(),
+                            empty_tile_material.clone_weak(),
+                        ),
+                        EmptyTile,
                     ))
                     .with_children(|b| {
                         b.spawn(Text2dBundle {
@@ -230,6 +233,10 @@ pub struct TilemapCursor(Entity);
 pub struct TilemapEntities {
     tiles: HashMap<Hex, Entity>,
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct EmptyTile;
 
 #[derive(Deref, Resource)]
 pub struct EmptyTileMaterial(Handle<ColorMaterial>);
