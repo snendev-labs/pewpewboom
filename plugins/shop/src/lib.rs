@@ -1,11 +1,14 @@
-use bevy::{color::palettes, prelude::*};
+use bevy::{color::palettes, prelude::*, window::PrimaryWindow};
 use sickle_ui::{
-    prelude::{LabelConfig, RadioGroup, UiBuilderExt, UiColumnExt, UiLabelExt, UiRadioGroupExt},
+    prelude::{
+        LabelConfig, RadioGroup, UiBuilderExt, UiColumnExt, UiContainerExt, UiLabelExt,
+        UiRadioGroupExt,
+    },
     ui_style::generated::{SetFlexDirectionExt, SetMaxHeightExt, SetOverflowExt},
     SickleUiPlugin,
 };
 
-use game_loop::{GamePhase, Player};
+use game_loop::{GamePhase, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
 use tilemap::{EmptyTile, EmptyTileMaterial, TargetedTile};
 
@@ -14,11 +17,14 @@ pub struct ShopPlugin;
 impl Plugin for ShopPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(SickleUiPlugin);
+        app.init_resource::<CursorCapture>();
         app.add_systems(
             Update,
             (
                 Self::setup_ui,
                 Self::handle_shop_selection,
+                Self::handle_ready,
+                Self::capture_cursor,
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
                         .or_else(resource_removed::<SelectedMerch>())
@@ -64,6 +70,25 @@ impl ShopPlugin {
                     .max_height(Val::Percent(100.))
                     .overflow(Overflow::clip_y())
                     .flex_direction(FlexDirection::Column);
+                column
+                    .container(
+                        ButtonBundle {
+                            style: Style {
+                                width: Val::Percent(100.),
+                                height: Val::Px(30.),
+                                flex_direction: FlexDirection::Column,
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            background_color: Color::Srgba(palettes::css::BLUE).into(),
+                            ..default()
+                        },
+                        |container| {
+                            container.label(LabelConfig::from("Ready!"));
+                        },
+                    )
+                    .insert(ReadyButton);
             })
             .style()
             .max_height(Val::Percent(100.));
@@ -91,6 +116,33 @@ impl ShopPlugin {
             }
         } else if selected_merch.is_some() {
             commands.remove_resource::<SelectedMerch>();
+        }
+    }
+
+    fn handle_ready(
+        mut commands: Commands,
+        mut interactions: Query<
+            (&mut BackgroundColor, &Interaction),
+            (Changed<Interaction>, With<ReadyButton>),
+        >,
+        players: Query<Entity, With<Player>>,
+    ) {
+        for (mut color, interaction) in &mut interactions {
+            match interaction {
+                Interaction::Pressed => {
+                    *color = Color::Srgba(palettes::css::DARK_BLUE).into();
+                    for player in &players {
+                        commands.entity(player).insert(Ready);
+                    }
+                    info!("Players are ready");
+                }
+                Interaction::Hovered => {
+                    *color = Color::Srgba(palettes::css::LIGHT_BLUE).into();
+                }
+                Interaction::None => {
+                    *color = Color::Srgba(palettes::css::BLUE).into();
+                }
+            }
         }
     }
 
@@ -147,6 +199,28 @@ impl ShopPlugin {
         }
         *last_target = targeted_tile.as_deref().cloned();
         *last_merch = selected_merch.as_deref().cloned();
+    }
+
+    fn capture_cursor(
+        mut capture: ResMut<CursorCapture>,
+        windows: Query<&Window, With<PrimaryWindow>>,
+        nodes: Query<(&Node, &GlobalTransform)>,
+    ) {
+        let Ok(window) = windows.get_single() else {
+            return;
+        };
+
+        let Some(cursor) = window.cursor_position() else {
+            return;
+        };
+
+        capture.0 = nodes.iter().any(|(node, transform)| {
+            let node_position = transform.translation().xy();
+            let half_size = 0.5 * node.size();
+            let min = node_position - half_size;
+            let max = node_position + half_size;
+            (min.x..max.x).contains(&cursor.x) && (min.y..max.y).contains(&cursor.y)
+        });
     }
 
     fn make_purchase(
@@ -210,3 +284,11 @@ pub struct ShopMerchOption;
 #[derive(Clone, Debug, PartialEq)]
 #[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct SelectedMerch(Merch);
+
+#[derive(Debug)]
+#[derive(Component)]
+pub struct ReadyButton;
+
+#[derive(Debug, Default)]
+#[derive(Resource)]
+pub struct CursorCapture(pub bool);
