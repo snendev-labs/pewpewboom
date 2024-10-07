@@ -30,8 +30,8 @@ y_reflector = { path = "plugins/y_reflector" }
 bevy = { version = "0.14", default-features = false }
 bevy_anyhow_alert = "0.3"
 bevy_gizmos = "0.14"
-bevy_prng = { version = "0.6", features = ["wyrand"] }
-bevy_rand = { version = "0.6", features = ["wyrand"] }
+bevy_prng = { version = "0.7", features = ["wyrand"] }
+bevy_rand = { version = "0.7", features = ["wyrand"] }
 bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }
 hexx = { git = "https://github.com/ManevilleF/hexx", features = [
     "bevy_reflect",

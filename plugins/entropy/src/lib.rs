@@ -3,7 +3,6 @@ use std::ops::RangeInclusive;
 use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::{EntropyPlugin as RandEntropyPlugin, *};
-
 use rand::Rng;
 
 pub use bevy_prng;
@@ -13,7 +12,7 @@ pub use rand_core::RngCore;
 
 #[derive(Clone, Copy, Default)]
 pub struct EntropyPlugin {
-    seed: [u8; 20],
+    seed: [u8; 8],
 }
 
 impl Plugin for EntropyPlugin {

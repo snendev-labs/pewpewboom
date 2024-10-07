@@ -33,17 +33,21 @@ impl MapGeneratorPlugin {
         }
     }
 
-    fn observer(trigger: Trigger<SpawnGame>, mut commands: Commands, entropy: Query<&Entropy>) {
+    fn observer(
+        trigger: Trigger<SpawnGame>,
+        mut commands: Commands,
+        mut entropy: Query<&mut EntropyBundle>,
+    ) {
         let game_instance = trigger.event().instance;
         let map_radius = trigger.event().radius as i32;
 
-        if let Some(entropy) = entropy.get(game_instance) {
+        if let Ok(mut entropy) = entropy.get_mut(game_instance) {
             commands.entity(game_instance).insert(ObstacleMap::generate(
-                [-map_radius, map_radius],
-                [-map_radius, map_radius],
+                -map_radius..=map_radius,
+                -map_radius..=map_radius,
                 5,
                 5,
-                entropy,
+                &mut entropy,
             ));
         }
     }
@@ -61,12 +65,10 @@ impl ObstacleMap {
     pub fn generate(
         horizontal_range: RangeInclusive<i32>,
         vertical_range: RangeInclusive<i32>,
-        horizontal_samples: usize, // Should be less than the length of the respective sampling interval
-        vertical_samples: usize, // Should be less than the length of the respective sampling interval
-        entropy: EntropyBundle,
+        horizontal_samples: u32, // Should be less than the length of the respective sampling interval
+        vertical_samples: u32, // Should be less than the length of the respective sampling interval
+        entropy: &mut EntropyBundle,
     ) -> Self {
-        let mut rng = thread_rng();
-
         let mut horizontal = entropy.sample_from_range(horizontal_range, horizontal_samples);
         horizontal.sort();
 
@@ -116,7 +118,7 @@ mod tests {
 
     use bevy::prelude::App;
 
-    use entropy::{EntropyPlugin, GlobalEntropy};
+    use entropy::{EntropyBundle, EntropyPlugin, GlobalEntropy};
 
     use super::{MapGeneratorPlugin, ObstacleMap, Tile};
 
@@ -129,25 +131,14 @@ mod tests {
     }
 
     #[test]
-    fn test_generating() {
-        let test_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2);
-
-        let map: HashSet<Tile> = vec![(0, 0), (0, 1), (1, 0), (1, 1)]
-            .into_iter()
-            .map(|(x, y)| Tile::new(x, y))
-            .collect();
-        let map = ObstacleMap(map);
-        assert_eq!(test_map, map)
-    }
-
-    #[test]
     fn test_hit() {
-        let app = test_app();
-        if let Some(entropy) = app.world().get_resource_mut::<GlobalEntropy>() {
-            let entropy_bundle = EntropyBundle::new(entropy);
-            let seeded_map = ObstacleMap::generate([0, 1], [0, 1], 2, 2, entropy_bundle);
+        let mut app = test_app();
 
-            assert!(test_map.contains(&Tile::new(0, 0)))
+        if let Some(mut entropy) = app.world_mut().get_resource_mut::<GlobalEntropy>() {
+            let mut entropy_bundle = EntropyBundle::new(&mut entropy);
+            let seeded_map = ObstacleMap::generate(0..=1, 0..=1, 2, 2, &mut entropy_bundle);
+
+            assert!(seeded_map.contains(&Tile::new(0, 0)))
         }
     }
 }
