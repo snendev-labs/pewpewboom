@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+
 use hexx::*;
 
 pub struct LaserPlugin;

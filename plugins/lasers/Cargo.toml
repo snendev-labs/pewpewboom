@@ -6,5 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tilemap = { workspace = true }
+
 bevy = { workspace = true }
+bevy_gizmos = { workspace = true }
+
 hexx = { workspace = true }
+

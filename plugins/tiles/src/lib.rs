@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{any::TypeId, marker::PhantomData};
 
 use bevy::{
     ecs::world::Command,
@@ -14,8 +14,11 @@ use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rota
 use tilemap::EmptyTileMaterial;
 
 pub use lasers;
+use tilemap::{EmptyTile, EmptyTileMaterial, Tilemap, TilemapEntities};
 
 pub trait Tile {
+    fn spawn(position: &Position, direction: &Direction, rotation: &Rotation) -> impl Command;
+
     fn material(asset_server: &AssetServer) -> ColorMaterial;
 
     fn activate(
@@ -60,13 +63,13 @@ where
     T: Tile + Component + Send + Sync + 'static,
 {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_event::<TileSpawnEvent>().add_systems(
             Update,
             (
-                Self::add_tile_material.in_set(TileSystems::Add),
+                Self::spawn_tiles.in_set(TileSystems::Spawn),
                 Self::activate_tiles.in_set(TileSystems::Activate),
                 Self::handle_hit_tiles.in_set(TileSystems::OnHit),
-                Self::remove_tile_material.in_set(TileSystems::Remove),
+                Self::update_tile_material,
             ),
         );
     }
@@ -126,24 +129,71 @@ where
         }
     }
 
-    fn add_tile_material(
-        mut tile_materials: Query<&mut Handle<ColorMaterial>, Added<T>>,
-        mut assets: ResMut<Assets<ColorMaterial>>,
-        asset_server: Res<AssetServer>,
+    fn spawn_tiles(
+        mut commands: Commands,
+        mut tile_spawns: EventReader<TileSpawnEvent>,
+        tilemaps: Query<&TilemapEntities, With<Tilemap>>,
     ) {
-        for mut material in &mut tile_materials {
-            *material = assets.add(T::material(&asset_server));
+        let spawning_position_entities = tile_spawns
+            .read()
+            .filter_map(|tile_spawn| {
+                if TypeId::of::<T>() == tile_spawn.tile_id {
+                    Some(tile_spawn.on_tile)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        for tilemap_entities in tilemaps.iter() {
+            for position_entity in &spawning_position_entities {
+                for (hex, tile_entity) in tilemap_entities.iter() {
+                    if *tile_entity == *position_entity {
+                        commands.add(T::spawn(
+                            &Position::from(*hex),
+                            &Direction::default(),
+                            &Rotation::default(),
+                        ));
+
+                        commands.entity(*tile_entity).remove::<EmptyTile>();
+                    }
+                }
+            }
         }
     }
 
-    fn remove_tile_material(
-        mut removed_tile: RemovedComponents<T>,
-        mut tile_materials: Query<&mut Handle<ColorMaterial>>,
+    fn update_tile_material(
+        added_tiles: Query<
+            (&Position, Option<&T>, Option<&EmptyTile>),
+            Or<(Added<T>, Added<EmptyTile>)>,
+        >,
+        tilemaps: Query<&TilemapEntities, With<Tilemap>>,
+        mut materials: Query<&mut Handle<ColorMaterial>>,
+        mut material_assets: ResMut<Assets<ColorMaterial>>,
+        asset_server: Res<AssetServer>,
         empty_tile_material: Res<EmptyTileMaterial>,
     ) {
-        for tile in removed_tile.read() {
-            if let Ok(mut tile_material) = tile_materials.get_mut(tile) {
-                *tile_material = empty_tile_material.clone();
+        let Ok(tiles) = tilemaps.get_single() else {
+            return;
+        };
+
+        for (position, tile, empty) in &added_tiles {
+            info!("Tile added (or  removed)");
+            let hex = **position;
+            if let Some(mut material) = tiles
+                .get(&hex)
+                .and_then(|&entity| materials.get_mut(entity).ok())
+            {
+                info!("Material is recognized");
+                if let Some(_) = tile {
+                    info!("Change to tile material {:?}", T::material(&asset_server));
+                    *material = material_assets.add(T::material(&asset_server));
+                }
+
+                if let Some(_) = empty {
+                    info!("Change to empty tile material");
+                    *material = empty_tile_material.clone_weak();
+                }
             }
         }
     }
@@ -152,8 +202,13 @@ where
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[derive(SystemSet)]
 pub enum TileSystems {
-    Add,
+    Spawn,
     Activate,
     OnHit,
-    Remove,
+}
+
+#[derive(Event)]
+pub struct TileSpawnEvent {
+    pub tile_id: TypeId,
+    pub on_tile: Entity,
 }

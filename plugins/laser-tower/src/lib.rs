@@ -21,6 +21,13 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
+    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+        LaserTowerSpawn {
+            position: *position,
+            direction: *direction,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::CRIMSON))
     }
@@ -48,6 +55,17 @@ impl Merchandise for LaserTower {
         let mut base = <Self as Tile>::material(asset_server);
         base.color.set_alpha(0.6);
         base
+    }
+}
+
+pub struct LaserTowerSpawn {
+    position: Position,
+    direction: Direction,
+}
+
+impl Command for LaserTowerSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((LaserTower, self.position));
     }
 }
 

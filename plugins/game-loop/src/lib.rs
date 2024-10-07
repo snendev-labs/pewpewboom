@@ -43,6 +43,7 @@ impl GameLoopPlugin {
                     .all(|ready| ready.is_some());
                 if all_ready {
                     *phase = GamePhase::Act;
+                    info!("Game phase changed to act");
                 }
             }
         }

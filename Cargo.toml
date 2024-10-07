@@ -13,6 +13,7 @@ health = { path = "plugins/health" }
 hq = { path = "plugins/hq" }
 lasers = { path = "plugins/lasers" }
 laser_tower = { path = "plugins/laser-tower" }
+laser_visuals = { path = "plugins/laser-visuals" }
 map_generator = { path = "plugins/map_generator" }
 merchandise = { path = "plugins/merchandise" }
 mountain = { path = "plugins/mountain" }
@@ -28,6 +29,7 @@ y_reflector = { path = "plugins/y_reflector" }
 # bevy
 bevy = { version = "0.14", default-features = false }
 bevy_anyhow_alert = "0.3"
+bevy_gizmos = "0.14"
 bevy_prng = { version = "0.6", features = ["wyrand"] }
 bevy_rand = { version = "0.6", features = ["wyrand"] }
 bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }

@@ -22,6 +22,12 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
+    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+        ResourceDepositSpawn {
+            position: *position,
+        }
+    }
+
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
         ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_GOLDENROD))
     }
@@ -45,6 +51,16 @@ impl Tile for ResourceDepositTile {
             strength,
             shooter,
         })
+    }
+}
+
+pub struct ResourceDepositSpawn {
+    position: Position,
+}
+
+impl Command for ResourceDepositSpawn {
+    fn apply(self, world: &mut World) {
+        world.spawn((ResourceDepositTile, self.position));
     }
 }
 
