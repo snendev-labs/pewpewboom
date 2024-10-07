@@ -6,13 +6,17 @@ resolver = "2"
 # plugins
 amplifier = { path = "plugins/amplifier" }
 camera = { path = "plugins/camera" }
+entropy = { path = "plugins/entropy" }
+game = { path = "plugins/game" }
 game_loop = { path = "plugins/game-loop" }
 health = { path = "plugins/health" }
 hq = { path = "plugins/hq" }
 lasers = { path = "plugins/lasers" }
 laser_tower = { path = "plugins/laser-tower" }
 laser_visuals = { path = "plugins/laser-visuals" }
+map_generator = { path = "plugins/map_generator" }
 merchandise = { path = "plugins/merchandise" }
+mountain = { path = "plugins/mountain" }
 reflector = { path = "plugins/reflector" }
 refractor = { path = "plugins/refractor" }
 rotater = { path = "plugins/rotater" }
@@ -26,8 +30,8 @@ y_reflector = { path = "plugins/y_reflector" }
 bevy = { version = "0.14", default-features = false }
 bevy_anyhow_alert = "0.3"
 bevy_gizmos = "0.14"
-bevy_prng = { version = "0.6", features = ["wyrand"] }
-bevy_rand = { version = "0.6", features = ["wyrand"] }
+bevy_prng = { version = "0.7", features = ["wyrand"] }
+bevy_rand = { version = "0.7", features = ["wyrand"] }
 bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }
 hexx = { git = "https://github.com/ManevilleF/hexx", features = [
     "bevy_reflect",
@@ -36,6 +40,8 @@ sickle_ui = { git = "https://github.com/UmbraLuminosa/sickle_ui", rev = "2f2fae9
 
 # stdx
 anyhow = "1.0"
+itertools = "0.13"
+rand = "0.8"
 rand_core = { version = "0.6" }
 thiserror = "1.0"
 
@@ -48,6 +54,7 @@ edition = "2021"
 # plugins
 amplifier = { workspace = true }
 camera = { workspace = true }
+entropy = { workspace = true }
 game_loop = { workspace = true }
 health = { workspace = true }
 hq = { workspace = true }

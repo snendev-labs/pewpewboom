@@ -15,7 +15,7 @@ impl HealthPlugin {
         query: Query<(Entity, &Health), Changed<Health>>,
     ) {
         for (entity, health) in &query {
-            if **health == 0 {
+            if **health <= 0 {
                 commands.entity(entity).despawn();
             }
         }

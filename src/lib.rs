@@ -2,6 +2,7 @@ use bevy::{app::PluginGroupBuilder, prelude::*};
 
 pub use amplifier;
 pub use camera;
+pub use entropy;
 pub use game_loop;
 pub use health;
 pub use hq;
@@ -16,6 +17,7 @@ pub struct PewPewBoomPlugins;
 impl PluginGroup for PewPewBoomPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
+            .add(entropy::EntropyPlugin::default())
             .add(game_loop::GameLoopPlugin)
             .add(tiles::TilesPlugin)
             .add(merchandise::MerchPlugin)

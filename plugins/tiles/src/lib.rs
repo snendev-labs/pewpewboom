@@ -1,11 +1,17 @@
 use std::{any::TypeId, marker::PhantomData};
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{
+    ecs::world::Command,
+    prelude::{
+        info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Entity,
+        Event, EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Or, Plugin, Query,
+        Res, ResMut, SystemSet, Update, With, World,
+    },
+};
 
 use game_loop::{GamePhase, InGame};
-use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation};
-
 pub use lasers;
+use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation};
 use tilemap::{EmptyTile, EmptyTileMaterial, Tilemap, TilemapEntities};
 
 pub trait Tile {

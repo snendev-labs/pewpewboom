@@ -65,6 +65,13 @@ impl GameLoopPlugin {
 #[derive(SystemSet)]
 pub struct GameLoopSystems;
 
+#[derive(Debug)]
+#[derive(Event)]
+pub struct SpawnGame {
+    pub instance: Entity,
+    pub radius: u32,
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 #[derive(Component, Reflect)]
 pub struct GameInstance;
