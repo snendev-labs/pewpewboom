@@ -1,11 +1,10 @@
 use std::{collections::HashSet, ops::RangeInclusive};
 
 use bevy::prelude::*;
-use itertools::Itertools;
-use rand::thread_rng;
-
-use entropy::{Entropy, EntropyBundle};
 use game_loop::SpawnGame;
+use itertools::Itertools;
+
+use entropy::EntropyBundle;
 use mountain::MountainTile;
 use tilemap::Tile;
 
