@@ -1,10 +1,11 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Consumption, Direction, Position, Refraction, Rotation},
-    Tile, TilePlugin,
+    Owner, Tile, TilePlugin,
 };
 
 pub struct RefractorPlugin;
@@ -21,10 +22,16 @@ impl Plugin for RefractorPlugin {
 pub struct RefractorTile;
 
 impl Tile for RefractorTile {
-    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        direction: &Direction,
+        _rotation: &Rotation,
+        player: &Entity,
+    ) -> impl Command {
         RefractorSpawn {
             position: *position,
             direction: *direction,
+            player: *player,
         }
     }
 
@@ -38,6 +45,7 @@ impl Tile for RefractorTile {
         position: &Position,
         direction: &Direction,
         _rotation: &Rotation,
+        _shooter: &Entity,
     ) -> impl Command {
         RefractorActivate {
             tile: entity,
@@ -68,11 +76,19 @@ impl Merchandise for RefractorTile {
 pub struct RefractorSpawn {
     position: Position,
     direction: Direction,
+    player: Entity,
 }
 
 impl Command for RefractorSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((RefractorTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                RefractorTile,
+                self.position,
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

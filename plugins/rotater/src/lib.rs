@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Direction, Position, Rotation},
-    Tile, TilePlugin,
+    Owner, Tile, TilePlugin,
 };
 
 pub struct RotaterPlugin;
@@ -20,10 +21,16 @@ impl Plugin for RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
-    fn spawn(position: &Position, _direction: &Direction, rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        _direction: &Direction,
+        rotation: &Rotation,
+        player: &Entity,
+    ) -> impl Command {
         RotaterSpawn {
             position: *position,
             rotation: *rotation,
+            player: *player,
         }
     }
 
@@ -37,6 +44,7 @@ impl Tile for RotaterTile {
         position: &Position,
         _direction: &Direction,
         rotation: &Rotation,
+        _shooter: &Entity,
     ) -> impl Command {
         RotaterActivate {
             position: *position,
@@ -59,11 +67,19 @@ impl Merchandise for RotaterTile {
 pub struct RotaterSpawn {
     position: Position,
     rotation: Rotation,
+    player: Entity,
 }
 
 impl Command for RotaterSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((RotaterTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                RotaterTile,
+                self.position,
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

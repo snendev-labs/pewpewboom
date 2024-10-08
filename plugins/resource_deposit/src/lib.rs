@@ -22,7 +22,12 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        _direction: &Direction,
+        _rotation: &Rotation,
+        _player: &Entity,
+    ) -> impl Command {
         ResourceDepositSpawn {
             position: *position,
         }
@@ -38,6 +43,7 @@ impl Tile for ResourceDepositTile {
         position: &Position,
         _direction: &Direction,
         _rotation: &Rotation,
+        _shooter: &Entity,
     ) -> impl Command {
         ResourceDepositActivate {
             tile: entity,

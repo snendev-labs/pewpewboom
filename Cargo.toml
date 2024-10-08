@@ -59,6 +59,7 @@ game_loop = { workspace = true }
 health = { workspace = true }
 hq = { workspace = true }
 laser_tower = { workspace = true }
+laser_visuals = { workspace = true }
 merchandise = { workspace = true }
 reflector = { workspace = true }
 refractor = { workspace = true }

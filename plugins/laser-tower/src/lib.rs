@@ -1,10 +1,11 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Consumption, Direction, Laser, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Consumption, Direction, Laser, Position, Rotation, Shooter},
+    Owner, Tile, TilePlugin,
 };
 
 pub struct LaserTowerPlugin;
@@ -21,10 +22,16 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        direction: &Direction,
+        _rotation: &Rotation,
+        player: &Entity,
+    ) -> impl Command {
         LaserTowerSpawn {
             position: *position,
             direction: *direction,
+            player: *player,
         }
     }
 
@@ -38,11 +45,13 @@ impl Tile for LaserTower {
         position: &Position,
         direction: &Direction,
         _rotation: &Rotation,
+        shooter: &Entity,
     ) -> impl Command {
         LaserTowerActivate {
             tile,
             position: *position,
             direction: *direction,
+            shooter: *shooter,
         }
     }
 }
@@ -61,11 +70,19 @@ impl Merchandise for LaserTower {
 pub struct LaserTowerSpawn {
     position: Position,
     direction: Direction,
+    player: Entity,
 }
 
 impl Command for LaserTowerSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((LaserTower, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                LaserTower,
+                self.position,
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 
@@ -74,6 +91,7 @@ pub struct LaserTowerActivate {
     tile: Entity,
     position: Position,
     direction: Direction,
+    shooter: Entity,
 }
 
 impl Command for LaserTowerActivate {
@@ -83,7 +101,12 @@ impl Command for LaserTowerActivate {
             Direction::ALL.to_vec(),
             self.position,
         ));
-        world.spawn((Laser, self.position, self.direction));
+        world.spawn((
+            Laser,
+            self.position,
+            self.direction,
+            Shooter::new(self.shooter),
+        ));
     }
 }
 

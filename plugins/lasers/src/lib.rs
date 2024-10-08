@@ -104,6 +104,7 @@ impl LaserPlugin {
                 current_position = next_position;
             }
             laser_path_events.send(LaserPathEvent { path });
+            info!("Sent uninterrupted laser path event");
         }
     }
 }
@@ -128,6 +129,16 @@ pub struct LaserPathEvent {
 #[derive(PartialEq, Eq)]
 #[derive(Component, Deref, DerefMut)]
 pub struct Shooter(Entity);
+
+impl Shooter {
+    pub fn new(entity: Entity) -> Shooter {
+        Self(entity)
+    }
+
+    pub fn inner(&self) -> Entity {
+        self.0
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 #[derive(PartialEq, Eq)]

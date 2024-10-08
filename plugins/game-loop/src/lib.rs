@@ -92,6 +92,16 @@ pub struct GamePlayers(Vec<Entity>);
 #[derive(Component, Deref, Reflect)]
 pub struct InGame(Entity);
 
+impl InGame {
+    pub fn new(entity: Entity) -> InGame {
+        Self(entity)
+    }
+
+    pub fn inner(&self) -> Entity {
+        self.0
+    }
+}
+
 #[derive(Debug, Default)]
 #[derive(Bundle)]
 pub struct GameInstanceBundle {

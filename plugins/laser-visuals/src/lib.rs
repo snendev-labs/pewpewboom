@@ -1,5 +1,5 @@
 use bevy::prelude::{
-    Commands, Component, Deref, Entity, EventReader, FixedUpdate, Gizmos, IntoSystemConfigs,
+    info, Commands, Component, Deref, Entity, EventReader, FixedUpdate, Gizmos, IntoSystemConfigs,
     Plugin, Query, Ray2d, SystemSet, Timer, TimerMode, Update, Vec2,
 };
 

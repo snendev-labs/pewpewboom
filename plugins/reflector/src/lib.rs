@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Direction, Position, Reflection, Rotation},
-    Tile, TilePlugin,
+    Owner, Tile, TilePlugin,
 };
 
 pub struct ReflectorPlugin;
@@ -20,10 +21,16 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        direction: &Direction,
+        _rotation: &Rotation,
+        player: &Entity,
+    ) -> impl Command {
         ReflectorSpawn {
             position: *position,
             direction: *direction,
+            player: *player,
         }
     }
 
@@ -37,6 +44,7 @@ impl Tile for ReflectorTile {
         position: &Position,
         direction: &Direction,
         _rotation: &Rotation,
+        _shooter: &Entity,
     ) -> impl Command {
         ReflectorActivate {
             position: *position,
@@ -59,11 +67,19 @@ impl Merchandise for ReflectorTile {
 pub struct ReflectorSpawn {
     position: Position,
     direction: Direction,
+    player: Entity,
 }
 
 impl Command for ReflectorSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((ReflectorTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                ReflectorTile,
+                self.position,
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

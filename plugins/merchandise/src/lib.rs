@@ -69,6 +69,7 @@ impl MerchPlugin {
                     tile_spawns.send(TileSpawnEvent {
                         tile_id: *tile_id,
                         on_tile: *on_tile,
+                        player: *buyer,
                     });
                 } else {
                     info!("Unknown merch error");

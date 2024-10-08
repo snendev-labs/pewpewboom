@@ -18,7 +18,12 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(
+        position: &Position,
+        _direction: &Direction,
+        _rotation: &Rotation,
+        _player: &Entity,
+    ) -> impl Command {
         MountainSpawn {
             position: *position,
         }
@@ -34,6 +39,7 @@ impl Tile for MountainTile {
         position: &Position,
         _direction: &Direction,
         _rotation: &Rotation,
+        _shooter: &Entity,
     ) -> impl Command {
         MountainActivate {
             tile: entity,
