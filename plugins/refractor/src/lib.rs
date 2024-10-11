@@ -4,7 +4,7 @@ use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Consumption, Direction, Position, Refraction, Rotation},
+    lasers::{Consumption, Direction, Position, Refraction},
     Owner, Tile, TileParameters, TilePlugin,
 };
 

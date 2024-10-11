@@ -3,7 +3,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use game_loop::InGame;
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Direction, Position, Rotation},
+    lasers::{Consumption, Direction, Position},
     Owner, Tile, TileParameters, TilePlugin,
 };
 pub struct HQPlugin;

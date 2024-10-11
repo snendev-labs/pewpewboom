@@ -3,7 +3,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Amplification, Direction, Position, Rotation},
+    lasers::{Amplification, Position},
     Owner, Tile, TileParameters, TilePlugin,
 };
 

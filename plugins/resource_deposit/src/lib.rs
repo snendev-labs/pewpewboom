@@ -5,7 +5,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use health::Health;
 use merchandise::Money;
 use tiles::{
-    lasers::{Consumption, Direction, Position, Rotation},
+    lasers::{Consumption, Direction, Position},
     Tile, TileParameters, TilePlugin,
 };
 
