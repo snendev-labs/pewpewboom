@@ -4,7 +4,7 @@ use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Direction, Position, Reflection, Rotation},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct ReflectorPlugin;
@@ -21,16 +21,11 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         ReflectorSpawn {
-            position: *position,
-            direction: *direction,
-            player: *player,
+            position: parameters.position,
+            direction: parameters.direction.unwrap_or_default(),
+            player,
         }
     }
 
@@ -41,14 +36,14 @@ impl Tile for ReflectorTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        _shooter: &Entity,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         ReflectorActivate {
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters
+                .direction
+                .unwrap_or_else(|| panic!("Reflector needs a direction")),
         }
     }
 }
@@ -75,7 +70,11 @@ impl Command for ReflectorSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 ReflectorTile,
-                self.position,
+                TileParameters {
+                    position: self.position,
+                    direction: Some(self.direction),
+                    ..default()
+                },
                 Owner::new(self.player),
                 game.clone(),
             ));

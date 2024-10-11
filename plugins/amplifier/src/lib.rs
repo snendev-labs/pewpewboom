@@ -4,7 +4,7 @@ use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Amplification, Direction, Position, Rotation},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct AmplifierPlugin;
@@ -21,15 +21,10 @@ impl Plugin for AmplifierPlugin {
 pub struct AmplifierTile;
 
 impl Tile for AmplifierTile {
-    fn spawn(
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         AmplifierSpawn {
-            position: *position,
-            player: *player,
+            position: parameters.position,
+            player,
         }
     }
 
@@ -40,13 +35,11 @@ impl Tile for AmplifierTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
-        _shooter: &Entity,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         AmplifierActivate {
-            position: *position,
+            position: parameters.position,
         }
     }
 }

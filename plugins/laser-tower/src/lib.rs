@@ -5,7 +5,7 @@ use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Consumption, Direction, Laser, Position, Rotation, Shooter},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct LaserTowerPlugin;
@@ -22,16 +22,11 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         LaserTowerSpawn {
-            position: *position,
-            direction: *direction,
-            player: *player,
+            position: parameters.position,
+            direction: parameters.direction.unwrap_or_default(),
+            player,
         }
     }
 
@@ -42,16 +37,17 @@ impl Tile for LaserTower {
     fn activate(
         &self,
         tile: Entity,
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        shooter: &Entity,
+        parameters: TileParameters,
+        shooter: Option<Entity>,
     ) -> impl Command {
         LaserTowerActivate {
             tile,
-            position: *position,
-            direction: *direction,
-            shooter: *shooter,
+            position: parameters.position,
+            direction: parameters
+                .direction
+                .unwrap_or_else(|| panic!("Laser tower needs a direction")),
+            shooter: shooter
+                .unwrap_or_else(|| panic!("Laser tower needs to have a owner to shoot")),
         }
     }
 }
@@ -78,7 +74,11 @@ impl Command for LaserTowerSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 LaserTower,
-                self.position,
+                TileParameters {
+                    position: self.position,
+                    direction: Some(self.direction),
+                    ..default()
+                },
                 Owner::new(self.player),
                 game.clone(),
             ));

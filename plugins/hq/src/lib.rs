@@ -4,7 +4,7 @@ use game_loop::InGame;
 use health::Health;
 use tiles::{
     lasers::{Consumption, Direction, Position, Rotation},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 pub struct HQPlugin;
 
@@ -19,15 +19,10 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn spawn(
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         HQSpawn {
-            position: *position,
-            player: *player,
+            position: parameters.position,
+            player: player,
         }
     }
 
@@ -38,14 +33,12 @@ impl Tile for HQTile {
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
-        _shooter: &Entity,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         HQActivate {
             tile: entity,
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -65,7 +58,7 @@ pub struct HQSpawn {
 impl Command for HQSpawn {
     fn apply(self, world: &mut World) {
         if let Some(game) = world.get::<InGame>(self.player) {
-            world.spawn((HQTile, self.position, Owner::new(self.player)));
+            world.spawn((HQTile, self.position, Owner::new(self.player), game.clone()));
         }
     }
 }

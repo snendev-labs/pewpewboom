@@ -9,28 +9,23 @@ use bevy::{
     },
 };
 
-use game_loop::{GamePhase, InGame};
+use game_loop::{GameLoopSystems, GamePhase, InGame};
 pub use lasers;
-use lasers::{Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation};
+use lasers::{
+    Amplification, Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation,
+};
 use tilemap::{EmptyTile, EmptyTileMaterial, Tilemap, TilemapEntities};
 
 pub trait Tile {
-    fn spawn(
-        position: &Position,
-        direction: &Direction,
-        rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command;
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command;
 
     fn material(asset_server: &AssetServer) -> ColorMaterial;
 
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        direction: &Direction,
-        rotation: &Rotation,
-        shooter: &Entity,
+        parameters: TileParameters,
+        shooter: Option<Entity>,
     ) -> impl Command;
 
     #[allow(unused_variables)]
@@ -45,7 +40,12 @@ impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(LaserPlugin).configure_sets(
             Update,
-            (TileSystems::Activate, LaserSystems, TileSystems::OnHit).chain(),
+            (
+                TileSystems::Activate.after(GameLoopSystems),
+                LaserSystems,
+                TileSystems::OnHit,
+            )
+                .chain(),
         );
     }
 }
@@ -87,15 +87,7 @@ where
         mut commands: Commands,
         activated_games: Query<(Entity, &GamePhase), Changed<GamePhase>>,
         games: Query<&GamePhase>,
-        activated_tiles: Query<(
-            Entity,
-            &Position,
-            &Direction,
-            &Rotation,
-            &Owner,
-            &T,
-            &InGame,
-        )>,
+        activated_tiles: Query<(Entity, &TileParameters, Option<&Owner>, &T, &InGame)>,
     ) {
         let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
         let total_active_games = games
@@ -110,23 +102,26 @@ where
             }
             info!("Found active game");
 
-            let (entity, position, direction, rotation, owner, tile, _) = sorted_tiles
-                .find(|(_, _, _, _, _, _, in_game)| ***in_game == game)
+            let (entity, parameters, owner, tile, _) = sorted_tiles
+                .find(|(_, _, _, _, in_game)| ***in_game == game)
                 .unwrap_or_else(|| {
                     panic!("failed to find tiles for game {:?}! invalid sort?", game);
                 });
             info!("Found tiles for game {:?}", game);
             info!("Processing entity {:?} in game {:?}", entity, game);
-            commands.add(tile.activate(entity, position, direction, rotation, &owner.inner()));
+            commands.add(tile.activate(entity, *parameters, owner.and_then(|owner| Some(owner.0))));
 
             while sorted_tiles
                 .peek()
-                .is_some_and(|(_, _, _, _, _, _, in_game)| ***in_game == game)
+                .is_some_and(|(_, _, _, _, in_game)| ***in_game == game)
             {
-                let (entity, position, direction, rotation, owner, tile, _) =
-                    sorted_tiles.next().unwrap();
+                let (entity, parameters, owner, tile, _) = sorted_tiles.next().unwrap();
                 info!("Processing entity {:?} in game {:?}", entity, game);
-                commands.add(tile.activate(entity, position, direction, rotation, &owner.inner()));
+                commands.add(tile.activate(
+                    entity,
+                    *parameters,
+                    owner.and_then(|owner| Some(owner.0)),
+                ));
             }
         }
     }
@@ -171,10 +166,8 @@ where
                 for (hex, tile_entity) in tilemap_entities.iter() {
                     if *tile_entity == tile_spawn.on_tile {
                         commands.add(T::spawn(
-                            &Position::from(*hex),
-                            &Direction::default(),
-                            &Rotation::default(),
-                            &tile_spawn.player,
+                            TileParameters::from_position(&Position::from(*hex)),
+                            tile_spawn.player,
                         ));
 
                         commands.entity(*tile_entity).remove::<EmptyTile>();
@@ -247,5 +240,23 @@ impl Owner {
 
     pub fn inner(&self) -> Entity {
         self.0
+    }
+}
+
+#[derive(Copy, Clone, Debug, Default)]
+#[derive(Component)]
+pub struct TileParameters {
+    pub position: Position,
+    pub direction: Option<Direction>,
+    pub rotation: Option<Rotation>,
+    pub amplification: Option<Amplification>,
+}
+
+impl TileParameters {
+    pub fn from_position(position: &Position) -> TileParameters {
+        Self {
+            position: *position,
+            ..Default::default()
+        }
     }
 }

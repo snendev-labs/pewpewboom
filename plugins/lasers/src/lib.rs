@@ -140,7 +140,7 @@ impl Shooter {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 #[derive(PartialEq, Eq)]
 #[derive(Component, Deref, DerefMut)]
 pub struct Position(Hex);

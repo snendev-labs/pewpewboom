@@ -4,7 +4,7 @@ use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Direction, Position, Rotation},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct RotaterPlugin;
@@ -21,16 +21,11 @@ impl Plugin for RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
-    fn spawn(
-        position: &Position,
-        _direction: &Direction,
-        rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         RotaterSpawn {
-            position: *position,
-            rotation: *rotation,
-            player: *player,
+            position: parameters.position,
+            rotation: parameters.rotation.unwrap_or_default(),
+            player,
         }
     }
 
@@ -41,14 +36,14 @@ impl Tile for RotaterTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        rotation: &Rotation,
-        _shooter: &Entity,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         RotaterActivate {
-            position: *position,
-            rotation: *rotation,
+            position: parameters.position,
+            rotation: parameters
+                .rotation
+                .unwrap_or_else(|| panic!("Rotator needs a rotation")),
         }
     }
 }
@@ -75,7 +70,11 @@ impl Command for RotaterSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 RotaterTile,
-                self.position,
+                TileParameters {
+                    position: self.position,
+                    rotation: Some(self.rotation),
+                    ..default()
+                },
                 Owner::new(self.player),
                 game.clone(),
             ));

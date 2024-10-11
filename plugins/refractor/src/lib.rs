@@ -5,7 +5,7 @@ use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
     lasers::{Consumption, Direction, Position, Refraction, Rotation},
-    Owner, Tile, TilePlugin,
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct RefractorPlugin;
@@ -22,16 +22,11 @@ impl Plugin for RefractorPlugin {
 pub struct RefractorTile;
 
 impl Tile for RefractorTile {
-    fn spawn(
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        player: &Entity,
-    ) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         RefractorSpawn {
-            position: *position,
-            direction: *direction,
-            player: *player,
+            position: parameters.position,
+            direction: parameters.direction.unwrap_or_default(),
+            player,
         }
     }
 
@@ -42,15 +37,15 @@ impl Tile for RefractorTile {
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
-        _shooter: &Entity,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         RefractorActivate {
             tile: entity,
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters
+                .direction
+                .unwrap_or_else(|| panic!("Refractor needs a direction")),
         }
     }
 
@@ -84,7 +79,11 @@ impl Command for RefractorSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 RefractorTile,
-                self.position,
+                TileParameters {
+                    position: self.position,
+                    direction: Some(self.direction),
+                    ..default()
+                },
                 Owner::new(self.player),
                 game.clone(),
             ));
