@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Direction, Position, Reflection, Rotation},
-    Tile, TilePlugin,
+    lasers::{Direction, Position, Reflection},
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct ReflectorPlugin;
@@ -20,10 +21,11 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         ReflectorSpawn {
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters.direction.unwrap_or_default(),
+            player,
         }
     }
 
@@ -34,13 +36,14 @@ impl Tile for ReflectorTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         ReflectorActivate {
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters
+                .direction
+                .unwrap_or_else(|| panic!("Reflector needs a direction")),
         }
     }
 }
@@ -59,11 +62,23 @@ impl Merchandise for ReflectorTile {
 pub struct ReflectorSpawn {
     position: Position,
     direction: Direction,
+    player: Entity,
 }
 
 impl Command for ReflectorSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((ReflectorTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                ReflectorTile,
+                TileParameters {
+                    position: self.position,
+                    direction: Some(self.direction),
+                    ..default()
+                },
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

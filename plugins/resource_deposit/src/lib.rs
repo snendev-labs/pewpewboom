@@ -5,8 +5,8 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use health::Health;
 use merchandise::Money;
 use tiles::{
-    lasers::{Consumption, Direction, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Consumption, Direction, Position},
+    Tile, TileParameters, TilePlugin,
 };
 
 pub struct ResourceDepositPlugin;
@@ -22,9 +22,9 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, _player: Entity) -> impl Command {
         ResourceDepositSpawn {
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -35,13 +35,12 @@ impl Tile for ResourceDepositTile {
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         ResourceDepositActivate {
             tile: entity,
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -60,7 +59,10 @@ pub struct ResourceDepositSpawn {
 
 impl Command for ResourceDepositSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((ResourceDepositTile, self.position));
+        world.spawn((
+            ResourceDepositTile,
+            TileParameters::from_position(&self.position),
+        )); // Needs the InGame added here too
     }
 }
 

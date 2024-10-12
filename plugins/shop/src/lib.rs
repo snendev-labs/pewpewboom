@@ -34,6 +34,7 @@ impl Plugin for ShopPlugin {
                 Self::make_purchase.run_if(
                     resource_exists::<SelectedMerch>.and_then(resource_exists::<TargetedTile>),
                 ),
+                Self::clear_ui,
             )
                 .chain()
                 .in_set(ShopSystems),
@@ -53,6 +54,7 @@ impl ShopPlugin {
         {
             return;
         };
+        info!("Running setup ui");
         let root = commands.spawn(ShopUIRoot::bundle()).id();
         commands
             .ui_builder(root)
@@ -92,6 +94,21 @@ impl ShopPlugin {
             })
             .style()
             .max_height(Val::Percent(100.));
+    }
+
+    fn clear_ui(
+        mut commands: Commands,
+        games: Query<&GamePhase>, // Not working with Changed filter for some reason...
+        shop: Query<Entity, With<ShopUIRoot>>,
+    ) {
+        if !games
+            .get_single()
+            .is_ok_and(|phase| matches!(phase, GamePhase::Choose))
+        {
+            for shop_entity in &shop {
+                commands.entity(shop_entity).despawn_recursive();
+            }
+        };
     }
 
     fn handle_shop_selection(
@@ -229,7 +246,12 @@ impl ShopPlugin {
         selected_merch: Option<Res<SelectedMerch>>,
         targeted_tile: Option<Res<TargetedTile>>,
         players: Query<Entity, With<Player>>,
+        capture: Res<CursorCapture>,
     ) {
+        if capture.0 {
+            return;
+        }
+
         if let Some(targeted_tile) = targeted_tile.as_deref() {
             if let Some(merch) = selected_merch.as_deref() {
                 if mouse_input.just_released(MouseButton::Left) {

@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Amplification, Direction, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Amplification, Position},
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct AmplifierPlugin;
@@ -20,9 +21,10 @@ impl Plugin for AmplifierPlugin {
 pub struct AmplifierTile;
 
 impl Tile for AmplifierTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         AmplifierSpawn {
-            position: *position,
+            position: parameters.position,
+            player,
         }
     }
 
@@ -33,12 +35,11 @@ impl Tile for AmplifierTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         AmplifierActivate {
-            position: *position,
+            position: parameters.position,
         }
     }
 }
@@ -56,11 +57,19 @@ impl Merchandise for AmplifierTile {
 
 pub struct AmplifierSpawn {
     position: Position,
+    player: Entity,
 }
 
 impl Command for AmplifierSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((AmplifierTile, self.position.clone()));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                AmplifierTile,
+                self.position.clone(),
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Direction, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Position, Rotation},
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct RotaterPlugin;
@@ -20,10 +21,11 @@ impl Plugin for RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
-    fn spawn(position: &Position, _direction: &Direction, rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         RotaterSpawn {
-            position: *position,
-            rotation: *rotation,
+            position: parameters.position,
+            rotation: parameters.rotation.unwrap_or_default(),
+            player,
         }
     }
 
@@ -34,13 +36,14 @@ impl Tile for RotaterTile {
     fn activate(
         &self,
         _entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         RotaterActivate {
-            position: *position,
-            rotation: *rotation,
+            position: parameters.position,
+            rotation: parameters
+                .rotation
+                .unwrap_or_else(|| panic!("Rotator needs a rotation")),
         }
     }
 }
@@ -59,11 +62,23 @@ impl Merchandise for RotaterTile {
 pub struct RotaterSpawn {
     position: Position,
     rotation: Rotation,
+    player: Entity,
 }
 
 impl Command for RotaterSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((RotaterTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                RotaterTile,
+                TileParameters {
+                    position: self.position,
+                    rotation: Some(self.rotation),
+                    ..default()
+                },
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 

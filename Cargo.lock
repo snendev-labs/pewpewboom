@@ -135,6 +135,7 @@ name = "amplifier"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "merchandise",
  "tiles",
@@ -2208,6 +2209,7 @@ name = "hq"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "tiles",
 ]
@@ -2365,6 +2367,7 @@ name = "laser_tower"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "merchandise",
  "tiles",
@@ -2575,6 +2578,7 @@ name = "mountain"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "tiles",
 ]
@@ -3101,6 +3105,7 @@ dependencies = [
  "health",
  "hq",
  "laser_tower",
+ "laser_visuals",
  "merchandise",
  "reflector",
  "refractor",
@@ -3338,6 +3343,7 @@ name = "reflector"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "merchandise",
  "tiles",
 ]
@@ -3347,6 +3353,7 @@ name = "refractor"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "merchandise",
  "tiles",
@@ -3407,6 +3414,7 @@ name = "resource"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "health",
  "merchandise",
  "tiles",
@@ -3440,6 +3448,7 @@ name = "rotater"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "merchandise",
  "tiles",
 ]

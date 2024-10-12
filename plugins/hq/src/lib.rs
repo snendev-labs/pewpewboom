@@ -1,9 +1,10 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Direction, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Consumption, Direction, Position},
+    Owner, Tile, TileParameters, TilePlugin,
 };
 pub struct HQPlugin;
 
@@ -18,9 +19,10 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         HQSpawn {
-            position: *position,
+            position: parameters.position,
+            player: player,
         }
     }
 
@@ -31,13 +33,12 @@ impl Tile for HQTile {
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         HQActivate {
             tile: entity,
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -51,11 +52,14 @@ impl Tile for HQTile {
 
 pub struct HQSpawn {
     position: Position,
+    player: Entity,
 }
 
 impl Command for HQSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((HQTile, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((HQTile, self.position, Owner::new(self.player), game.clone()));
+        }
     }
 }
 

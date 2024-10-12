@@ -1,10 +1,11 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
 use tiles::{
-    lasers::{Consumption, Direction, Laser, Position, Rotation},
-    Tile, TilePlugin,
+    lasers::{Consumption, Direction, Laser, Position, Shooter},
+    Owner, Tile, TileParameters, TilePlugin,
 };
 
 pub struct LaserTowerPlugin;
@@ -21,10 +22,11 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(position: &Position, direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
         LaserTowerSpawn {
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters.direction.unwrap_or_default(),
+            player,
         }
     }
 
@@ -35,14 +37,17 @@ impl Tile for LaserTower {
     fn activate(
         &self,
         tile: Entity,
-        position: &Position,
-        direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        shooter: Option<Entity>,
     ) -> impl Command {
         LaserTowerActivate {
             tile,
-            position: *position,
-            direction: *direction,
+            position: parameters.position,
+            direction: parameters
+                .direction
+                .unwrap_or_else(|| panic!("Laser tower needs a direction")),
+            shooter: shooter
+                .unwrap_or_else(|| panic!("Laser tower needs to have a owner to shoot")),
         }
     }
 }
@@ -61,11 +66,23 @@ impl Merchandise for LaserTower {
 pub struct LaserTowerSpawn {
     position: Position,
     direction: Direction,
+    player: Entity,
 }
 
 impl Command for LaserTowerSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((LaserTower, self.position));
+        if let Some(game) = world.get::<InGame>(self.player) {
+            world.spawn((
+                LaserTower,
+                TileParameters {
+                    position: self.position,
+                    direction: Some(self.direction),
+                    ..default()
+                },
+                Owner::new(self.player),
+                game.clone(),
+            ));
+        }
     }
 }
 
@@ -74,6 +91,7 @@ pub struct LaserTowerActivate {
     tile: Entity,
     position: Position,
     direction: Direction,
+    shooter: Entity,
 }
 
 impl Command for LaserTowerActivate {
@@ -83,7 +101,12 @@ impl Command for LaserTowerActivate {
             Direction::ALL.to_vec(),
             self.position,
         ));
-        world.spawn((Laser, self.position, self.direction));
+        world.spawn((
+            Laser,
+            self.position,
+            self.direction,
+            Shooter::new(self.shooter),
+        ));
     }
 }
 

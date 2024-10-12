@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { workspace = true }
-tiles = { workspace = true }
-merchandise = { workspace = true }
+game_loop = { workspace = true }
 health = { workspace = true }
+merchandise = { workspace = true }
+tiles = { workspace = true }

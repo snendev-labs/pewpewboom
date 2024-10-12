@@ -3,7 +3,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use health::Health;
 use tiles::{
     lasers::{Consumption, Direction, Position, Rotation},
-    Tile, TilePlugin,
+    Tile, TileParameters, TilePlugin,
 };
 pub struct MountainPlugin;
 
@@ -18,9 +18,9 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
-    fn spawn(position: &Position, _direction: &Direction, _rotation: &Rotation) -> impl Command {
+    fn spawn(parameters: TileParameters, _player: Entity) -> impl Command {
         MountainSpawn {
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -31,13 +31,12 @@ impl Tile for MountainTile {
     fn activate(
         &self,
         entity: Entity,
-        position: &Position,
-        _direction: &Direction,
-        _rotation: &Rotation,
+        parameters: TileParameters,
+        _shooter: Option<Entity>,
     ) -> impl Command {
         MountainActivate {
             tile: entity,
-            position: *position,
+            position: parameters.position,
         }
     }
 
@@ -55,7 +54,8 @@ pub struct MountainSpawn {
 
 impl Command for MountainSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((MountainTile, self.position));
+        world.spawn((MountainTile, TileParameters::from_position(&self.position)));
+        // Needs the InGame added here too
     }
 }
 

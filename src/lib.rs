@@ -7,6 +7,7 @@ pub use game_loop;
 pub use health;
 pub use hq;
 pub use laser_tower;
+pub use laser_visuals;
 pub use merchandise;
 pub use refractor;
 pub use tilemap;
@@ -25,6 +26,7 @@ impl PluginGroup for PewPewBoomPlugins {
             .add(tilemap::TilemapPlugin)
             .add(camera::CameraPlugin)
             .add(shop::ShopPlugin)
+            .add(laser_visuals::LaserVisualPlugin)
     }
 }
 
