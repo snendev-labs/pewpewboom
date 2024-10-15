@@ -101,12 +101,16 @@ where
                 continue;
             }
             info!("Found active game");
-
-            let (entity, parameters, owner, tile, _) = sorted_tiles
-                .find(|(_, _, _, _, in_game)| ***in_game == game)
-                .unwrap_or_else(|| {
-                    panic!("failed to find tiles for game {:?}! invalid sort?", game);
-                });
+            info!("Current tiles {}", sorted_tiles.len());
+            let Some((entity, parameters, owner, tile, _)) =
+                sorted_tiles.find(|(_, _, _, _, in_game)| ***in_game == game)
+            else {
+                info!(
+                    "failed to find tiles for game {:?}! None exist or invalid sort(?)",
+                    game
+                );
+                continue;
+            };
             info!("Found tiles for game {:?}", game);
             info!("Processing entity {:?} in game {:?}", entity, game);
             commands.add(tile.activate(entity, *parameters, owner.and_then(|owner| Some(owner.0))));
