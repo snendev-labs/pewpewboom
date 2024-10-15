@@ -24,7 +24,7 @@ impl Plugin for ShopPlugin {
                 Self::setup_ui,
                 Self::handle_shop_selection,
                 Self::handle_ready,
-                Self::capture_cursor,
+                Self::capture_cursor.run_if(resource_exists::<CursorCapture>),
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
                         .or_else(resource_removed::<SelectedMerch>())
@@ -32,9 +32,11 @@ impl Plugin for ShopPlugin {
                         .or_else(resource_removed::<TargetedTile>()),
                 ),
                 Self::make_purchase.run_if(
-                    resource_exists::<SelectedMerch>.and_then(resource_exists::<TargetedTile>),
+                    resource_exists::<SelectedMerch>
+                        .and_then(resource_exists::<TargetedTile>)
+                        .and_then(resource_exists::<CursorCapture>),
                 ),
-                Self::clear_ui,
+                Self::clear_shop,
             )
                 .chain()
                 .in_set(ShopSystems),
@@ -96,7 +98,7 @@ impl ShopPlugin {
             .max_height(Val::Percent(100.));
     }
 
-    fn clear_ui(
+    fn clear_shop(
         mut commands: Commands,
         games: Query<&GamePhase>, // Not working with Changed filter for some reason...
         shop: Query<Entity, With<ShopUIRoot>>,
@@ -108,6 +110,9 @@ impl ShopPlugin {
             for shop_entity in &shop {
                 commands.entity(shop_entity).despawn_recursive();
             }
+
+            commands.remove_resource::<SelectedMerch>();
+            commands.remove_resource::<CursorCapture>();
         };
     }
 
