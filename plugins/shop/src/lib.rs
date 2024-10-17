@@ -32,9 +32,7 @@ impl Plugin for ShopPlugin {
                         .or_else(resource_removed::<TargetedTile>()),
                 ),
                 Self::make_purchase.run_if(
-                    resource_exists::<SelectedMerch>
-                        .and_then(resource_exists::<TargetedTile>)
-                        .and_then(resource_exists::<CursorCapture>),
+                    resource_exists::<SelectedMerch>.and_then(resource_exists::<TargetedTile>),
                 ),
                 Self::clear_shop,
             )
@@ -112,7 +110,6 @@ impl ShopPlugin {
             }
 
             commands.remove_resource::<SelectedMerch>();
-            commands.remove_resource::<CursorCapture>();
         };
     }
 
@@ -251,9 +248,9 @@ impl ShopPlugin {
         selected_merch: Option<Res<SelectedMerch>>,
         targeted_tile: Option<Res<TargetedTile>>,
         players: Query<Entity, With<Player>>,
-        capture: Res<CursorCapture>,
+        capture: Option<Res<CursorCapture>>,
     ) {
-        if capture.0 {
+        if capture.is_some_and(|capture| capture.0) {
             return;
         }
 

@@ -4,16 +4,19 @@ pub struct GameLoopPlugin;
 
 impl Plugin for GameLoopPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ActionsCompleteEvent>().add_systems(
-            Update,
-            (
-                Self::spawn_players,
-                Self::complete_choose_phase,
-                Self::complete_act_phase,
-            )
-                .chain()
-                .in_set(GameLoopSystems),
-        );
+        app.add_event::<ActionCompleteEvent>()
+            .add_event::<DrawingCompleteEvent>()
+            .add_systems(
+                Update,
+                (
+                    Self::spawn_players,
+                    Self::complete_choose_phase,
+                    Self::complete_action_phase,
+                    Self::complete_drawing_phase,
+                )
+                    .chain()
+                    .in_set(GameLoopSystems),
+            );
     }
 }
 
@@ -32,6 +35,7 @@ impl GameLoopPlugin {
     }
 
     fn complete_choose_phase(
+        mut commands: Commands,
         mut games: Query<(Entity, &mut GamePhase, &GamePlayers)>,
         players: Query<Option<&Ready>, With<Player>>,
     ) {
@@ -43,19 +47,35 @@ impl GameLoopPlugin {
                     .all(|ready| ready.is_some());
                 if all_ready {
                     *phase = GamePhase::Act;
+                    for player in &game_players.0 {
+                        commands.entity(*player).remove::<Ready>();
+                    }
                     info!("Game phase changed to act");
                 }
             }
         }
     }
 
-    fn complete_act_phase(
+    fn complete_action_phase(
         mut games: Query<&mut GamePhase>,
-        mut events: EventReader<ActionsCompleteEvent>,
+        mut events: EventReader<ActionCompleteEvent>,
     ) {
-        for ActionsCompleteEvent { game } in events.read() {
+        for ActionCompleteEvent { game } in events.read() {
+            if let Ok(mut phase) = games.get_mut(*game) {
+                *phase = GamePhase::Draw;
+                info!("Game phase changed to draw")
+            }
+        }
+    }
+
+    fn complete_drawing_phase(
+        mut games: Query<&mut GamePhase>,
+        mut events: EventReader<DrawingCompleteEvent>,
+    ) {
+        for DrawingCompleteEvent { game } in events.read() {
             if let Ok(mut phase) = games.get_mut(*game) {
                 *phase = GamePhase::Choose;
+                info!("Game phase changed to choose")
             }
         }
     }
@@ -82,6 +102,7 @@ pub enum GamePhase {
     #[default]
     Choose,
     Act,
+    Draw,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -118,6 +139,11 @@ pub struct Player;
 pub struct Ready;
 
 #[derive(Event)]
-pub struct ActionsCompleteEvent {
-    game: Entity,
+pub struct ActionCompleteEvent {
+    pub game: Entity,
+}
+
+#[derive(Event)]
+pub struct DrawingCompleteEvent {
+    pub game: Entity,
 }
