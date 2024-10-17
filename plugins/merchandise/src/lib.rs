@@ -36,7 +36,7 @@ impl Plugin for MerchPlugin {
 impl MerchPlugin {
     fn spawn_shoppers(mut commands: Commands, added_players: Query<Entity, Added<Player>>) {
         for player in &added_players {
-            commands.entity(player).insert((Shopper, Money::new(15)));
+            commands.entity(player).insert((Shopper, Money::new(50)));
         }
     }
 

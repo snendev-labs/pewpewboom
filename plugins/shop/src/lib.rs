@@ -256,7 +256,7 @@ impl ShopPlugin {
         if capture.0 {
             return;
         }
-
+        info!("Check purchases");
         if let Some(targeted_tile) = targeted_tile.as_deref() {
             if let Some(merch) = selected_merch.as_deref() {
                 if mouse_input.just_released(MouseButton::Left) {

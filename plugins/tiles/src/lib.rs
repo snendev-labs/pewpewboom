@@ -86,22 +86,15 @@ where
     fn activate_tiles(
         mut commands: Commands,
         activated_games: Query<(Entity, &GamePhase), Changed<GamePhase>>,
-        games: Query<&GamePhase>,
         activated_tiles: Query<(Entity, &TileParameters, Option<&Owner>, &T, &InGame)>,
     ) {
         let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
-        let total_active_games = games
-            .iter()
-            .filter(|game| matches!(game, GamePhase::Act))
-            .collect::<Vec<_>>()
-            .len();
-        info!("Found {:?} active games", total_active_games);
+
         for (game, phase) in activated_games.iter().sort::<Entity>() {
             if !matches!(phase, GamePhase::Act) {
                 continue;
             }
-            info!("Found active game");
-            info!("Current tiles {}", sorted_tiles.len());
+
             let Some((entity, parameters, owner, tile, _)) =
                 sorted_tiles.find(|(_, _, _, _, in_game)| ***in_game == game)
             else {
@@ -111,8 +104,7 @@ where
                 );
                 continue;
             };
-            info!("Found tiles for game {:?}", game);
-            info!("Processing entity {:?} in game {:?}", entity, game);
+
             commands.add(tile.activate(entity, *parameters, owner.and_then(|owner| Some(owner.0))));
 
             while sorted_tiles
@@ -120,7 +112,7 @@ where
                 .is_some_and(|(_, _, _, _, in_game)| ***in_game == game)
             {
                 let (entity, parameters, owner, tile, _) = sorted_tiles.next().unwrap();
-                info!("Processing entity {:?} in game {:?}", entity, game);
+
                 commands.add(tile.activate(
                     entity,
                     *parameters,

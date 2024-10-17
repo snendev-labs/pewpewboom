@@ -2378,6 +2378,7 @@ name = "laser_visuals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "lasers",
  "tilemap",
 ]
@@ -2388,6 +2389,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_gizmos",
+ "game_loop",
  "hexx",
  "tilemap",
 ]

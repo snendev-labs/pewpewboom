@@ -1,5 +1,8 @@
+use std::thread::current;
+
 use bevy::prelude::*;
 
+use game_loop::GamePhase;
 use hexx::*;
 
 pub struct LaserPlugin;
@@ -38,20 +41,27 @@ impl LaserPlugin {
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
         mut laser_path_events: EventWriter<LaserPathEvent>,
+        mut games: Query<&mut GamePhase>,
     ) {
+        if let Ok(game_phase) = games.get_single() {
+            if !matches!(game_phase, GamePhase::Act) {
+                return;
+            }
+        }
+
         'lasers: for (laser_position, laser_direction, laser_shooter) in &lasers {
             const LASER_RANGE: usize = 100;
             const BASE_LASER_STRENGTH: usize = 1;
 
             let mut path = Vec::new();
             let mut current_position = *laser_position;
+            path.push(current_position);
             let mut current_direction = *laser_direction;
             let mut strength = BASE_LASER_STRENGTH;
 
             for _ in 0..LASER_RANGE {
                 let next_position: Position =
                     current_position.neighbor(current_direction.as_hex()).into();
-                path.push(next_position);
 
                 if let Some((
                     collider,
@@ -66,10 +76,13 @@ impl LaserPlugin {
                     .iter()
                     .find(|(_, position, _, _, _, _, _, _)| **position == next_position)
                 {
+                    path.push(next_position);
+
                     if let Some(refracted_direction) =
                         refraction.and_then(|refraction| refraction.refract(current_direction))
                     {
                         current_direction = refracted_direction;
+                        info!("Laser refracted")
                     }
                     if let Some(reflected_direction) =
                         reflection.and_then(|reflection| reflection.reflect(current_direction))
@@ -103,8 +116,14 @@ impl LaserPlugin {
                 }
                 current_position = next_position;
             }
+
+            path.push(current_position);
             laser_path_events.send(LaserPathEvent { path });
             info!("Sent uninterrupted laser path event");
+        }
+
+        for mut game_phase in &mut games {
+            *game_phase = GamePhase::Draw;
         }
     }
 }
