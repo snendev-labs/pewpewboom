@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+
 use bevy::{
     prelude::{
         info, Commands, Component, Deref, Entity, EventReader, EventWriter, FixedUpdate, Gizmos,
-        IntoSystemConfigs, Plugin, Query, Ray2d, Res, SystemSet, Timer, TimerMode, Update, Vec2,
+        IntoSystemConfigs, Plugin, Query, Ray2d, Res, SystemSet, Update, Vec2,
     },
-    time::Time,
+    time::{Stopwatch, Time},
 };
 
 use game_loop::{DrawingCompleteEvent, GamePhase};
@@ -51,28 +53,20 @@ impl LaserVisualPlugin {
                 })
                 .collect::<Vec<_>>();
             let total_paths = paths.len();
-            if paths.len() > 0 {
+            info!("Spawning simulation with paths {:?}", paths);
+            if total_paths > 0 {
                 commands.spawn(LaserDrawSimulation {
                     paths,
-                    timer: Timer::from_seconds(20., TimerMode::Once),
-                    remaining_paths: total_paths as u32,
+                    stopwatch: Stopwatch::new(),
+                    remaining_paths: HashSet::from_iter(0..total_paths),
                 });
-                info!(
-                    "Laser draw simulation spawned with {} paths!",
-                    total_paths as u32
-                );
             }
         }
     }
 
     fn draw_lasers(mut draw_simulations: Query<&mut LaserDrawSimulation>, mut gizmos: Gizmos) {
         for mut simulation in &mut draw_simulations {
-            let time = simulation.timer.elapsed_secs();
-            if simulation.timer.paused() {
-                info!("Paused timer")
-            }
-            info!("Drawing lasers");
-            info!("Elapsed time: {}", time);
+            let time = simulation.stopwatch.elapsed_secs();
             // Store the data for each start, end of all the laser segments
             let all_laser_segments = simulation
                 .paths
@@ -89,7 +83,7 @@ impl LaserVisualPlugin {
                 })
                 .collect::<Vec<_>>();
 
-            for laser_path in all_laser_segments {
+            for (laser_path_index, laser_path) in all_laser_segments.iter().enumerate() {
                 let mut laser_time = time;
                 let number_of_segments = laser_path.len();
                 for (index, segment) in laser_path.iter().enumerate() {
@@ -104,7 +98,7 @@ impl LaserVisualPlugin {
                             .with_tip_length(25.);
                         laser_time -= end.distance(start) / LaserDrawSimulation::LASER_SPEED;
                         if index == number_of_segments - 1 {
-                            simulation.remaining_paths -= 1;
+                            simulation.remaining_paths.remove(&laser_path_index);
                         }
                     } else {
                         gizmos
@@ -130,7 +124,7 @@ impl LaserVisualPlugin {
             events.send(DrawingCompleteEvent { game });
         }
         for (entity, simulation) in &draw_simulations {
-            if simulation.remaining_paths == 0 {
+            if simulation.remaining_paths.is_empty() {
                 commands.entity(entity).despawn();
                 info!("Laser draw simulation cleared")
             }
@@ -139,7 +133,7 @@ impl LaserVisualPlugin {
 
     fn tick_simulation(time: Res<Time>, mut simulations: Query<&mut LaserDrawSimulation>) {
         for mut simulation in &mut simulations {
-            simulation.timer.tick(time.delta());
+            simulation.stopwatch.tick(time.delta());
         }
     }
 }
@@ -162,8 +156,8 @@ impl LaserPath {
 #[derive(Component)]
 pub struct LaserDrawSimulation {
     pub paths: Vec<LaserPath>,
-    pub timer: Timer,
-    pub remaining_paths: u32,
+    pub stopwatch: Stopwatch,
+    pub remaining_paths: HashSet<usize>,
 }
 
 impl LaserDrawSimulation {

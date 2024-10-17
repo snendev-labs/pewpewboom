@@ -4,16 +4,19 @@ pub struct GameLoopPlugin;
 
 impl Plugin for GameLoopPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DrawingCompleteEvent>().add_systems(
-            Update,
-            (
-                Self::spawn_players,
-                Self::complete_choose_phase,
-                Self::complete_drawing_phase,
-            )
-                .chain()
-                .in_set(GameLoopSystems),
-        );
+        app.add_event::<ActionCompleteEvent>()
+            .add_event::<DrawingCompleteEvent>()
+            .add_systems(
+                Update,
+                (
+                    Self::spawn_players,
+                    Self::complete_choose_phase,
+                    Self::complete_action_phase,
+                    Self::complete_drawing_phase,
+                )
+                    .chain()
+                    .in_set(GameLoopSystems),
+            );
     }
 }
 
@@ -49,6 +52,18 @@ impl GameLoopPlugin {
                     }
                     info!("Game phase changed to act");
                 }
+            }
+        }
+    }
+
+    fn complete_action_phase(
+        mut games: Query<&mut GamePhase>,
+        mut events: EventReader<ActionCompleteEvent>,
+    ) {
+        for ActionCompleteEvent { game } in events.read() {
+            if let Ok(mut phase) = games.get_mut(*game) {
+                *phase = GamePhase::Draw;
+                info!("Game phase changed to draw")
             }
         }
     }
@@ -122,6 +137,11 @@ pub struct Player;
 #[derive(Debug)]
 #[derive(Component, Reflect)]
 pub struct Ready;
+
+#[derive(Event)]
+pub struct ActionCompleteEvent {
+    pub game: Entity,
+}
 
 #[derive(Event)]
 pub struct DrawingCompleteEvent {

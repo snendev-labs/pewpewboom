@@ -1,9 +1,8 @@
-use std::thread::current;
-
 use bevy::prelude::*;
 
-use game_loop::GamePhase;
+use game_loop::{ActionCompleteEvent, GamePhase};
 use hexx::*;
+use tilemap::TilemapEntities;
 
 pub struct LaserPlugin;
 
@@ -41,13 +40,22 @@ impl LaserPlugin {
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
         mut laser_path_events: EventWriter<LaserPathEvent>,
-        mut games: Query<&mut GamePhase>,
+        games: Query<(Entity, &GamePhase)>,
+        tilemaps: Query<&TilemapEntities>,
+        mut events: EventWriter<ActionCompleteEvent>,
     ) {
-        if let Ok(game_phase) = games.get_single() {
-            if !matches!(game_phase, GamePhase::Act) {
-                return;
-            }
-        }
+        let Ok((game, game_phase)) = games.get_single() else {
+            return;
+        };
+
+        if !matches!(game_phase, GamePhase::Act) {
+            return;
+        };
+
+        let Ok(tilemap_entities) = tilemaps.get_single() else {
+            info!("No tilemap found");
+            return;
+        };
 
         'lasers: for (laser_position, laser_direction, laser_shooter) in &lasers {
             const LASER_RANGE: usize = 100;
@@ -62,6 +70,13 @@ impl LaserPlugin {
             for _ in 0..LASER_RANGE {
                 let next_position: Position =
                     current_position.neighbor(current_direction.as_hex()).into();
+
+                // Change this later to exit the while loop appropriately and still progress the laser path outside the tilemap for visual effect
+                if !tilemap_entities.contains_key(&(*next_position))
+                    || path.contains(&next_position)
+                {
+                    break;
+                }
 
                 if let Some((
                     collider,
@@ -118,13 +133,11 @@ impl LaserPlugin {
             }
 
             path.push(current_position);
+            info!("Sent path event {:?}", path);
             laser_path_events.send(LaserPathEvent { path });
-            info!("Sent uninterrupted laser path event");
         }
 
-        for mut game_phase in &mut games {
-            *game_phase = GamePhase::Draw;
-        }
+        events.send(ActionCompleteEvent { game });
     }
 }
 
