@@ -8,7 +8,7 @@ use sickle_ui::{
     SickleUiPlugin,
 };
 
-use game_loop::{GamePhase, Player, Ready};
+use game_loop::{GamePhase, GamePlayers, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
 use tilemap::{EmptyTile, EmptyTileMaterial, TargetedTile};
 
@@ -24,6 +24,7 @@ impl Plugin for ShopPlugin {
                 Self::setup_ui,
                 Self::handle_shop_selection,
                 Self::handle_ready,
+                Self::handle_player_control,
                 Self::capture_cursor.run_if(resource_exists::<CursorCapture>),
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
@@ -32,7 +33,9 @@ impl Plugin for ShopPlugin {
                         .or_else(resource_removed::<TargetedTile>()),
                 ),
                 Self::make_purchase.run_if(
-                    resource_exists::<SelectedMerch>.and_then(resource_exists::<TargetedTile>),
+                    resource_exists::<SelectedMerch>
+                        .and_then(resource_exists::<TargetedTile>)
+                        .and_then(resource_exists::<ControllingPlayer>),
                 ),
                 Self::clear_shop,
             )
@@ -72,6 +75,17 @@ impl ShopPlugin {
                     .max_height(Val::Percent(100.))
                     .overflow(Overflow::clip_y())
                     .flex_direction(FlexDirection::Column);
+                column
+                    .radio_group(
+                        vec!["Player 1".to_string(), "Player 2".to_string()],
+                        0,
+                        false,
+                    )
+                    .insert(ShopPlayerSwitch)
+                    .style()
+                    .max_height(Val::Percent(100.))
+                    .overflow(Overflow::clip_y())
+                    .flex_direction(FlexDirection::Row);
                 column
                     .container(
                         ButtonBundle {
@@ -135,6 +149,37 @@ impl ShopPlugin {
             }
         } else if selected_merch.is_some() {
             commands.remove_resource::<SelectedMerch>();
+        }
+    }
+
+    fn handle_player_control(
+        mut commands: Commands,
+        controlling_player: Option<ResMut<ControllingPlayer>>,
+        players: Query<&GamePlayers>,
+        mut player_switch: Query<&mut RadioGroup, (With<ShopPlayerSwitch>, Changed<RadioGroup>)>,
+    ) {
+        let Ok(mut player_switch) = player_switch.get_single_mut() else {
+            return;
+        };
+        let Ok(game_players) = players
+            .get_single()
+            .and_then(|players| Ok((**players).clone()))
+        else {
+            return;
+        };
+
+        if let Some(selected_player) = player_switch
+            .selected()
+            .and_then(|index| Some(game_players[index]))
+        {
+            if let Some(mut controlling_player) = controlling_player {
+                controlling_player.0 = selected_player;
+                info!("Setting controlling player to {}", selected_player);
+            } else {
+                commands.insert_resource(ControllingPlayer(selected_player))
+            }
+        } else if controlling_player.is_some() {
+            player_switch.select(0);
         }
     }
 
@@ -247,7 +292,7 @@ impl ShopPlugin {
         mouse_input: Res<ButtonInput<MouseButton>>,
         selected_merch: Option<Res<SelectedMerch>>,
         targeted_tile: Option<Res<TargetedTile>>,
-        players: Query<Entity, With<Player>>,
+        controlling_player: Res<ControllingPlayer>,
         capture: Option<Res<CursorCapture>>,
     ) {
         if capture.is_some_and(|capture| capture.0) {
@@ -263,7 +308,7 @@ impl ShopPlugin {
                         targeted_tile.tile
                     );
                     purchases.send(Purchase::new(
-                        players.iter().next().expect("No players added to game"),
+                        **controlling_player,
                         (**merch).clone(),
                         targeted_tile.tile,
                     ));
@@ -316,3 +361,11 @@ pub struct ReadyButton;
 #[derive(Debug, Default)]
 #[derive(Resource)]
 pub struct CursorCapture(pub bool);
+
+#[derive(Clone, Debug)]
+#[derive(Component)]
+pub struct ShopPlayerSwitch;
+
+#[derive(Clone, Debug)]
+#[derive(Deref, DerefMut, Resource, Reflect)]
+pub struct ControllingPlayer(Entity);

@@ -1,6 +1,7 @@
 use std::{any::TypeId, marker::PhantomData};
 
 use bevy::{
+    color::Luminance,
     ecs::world::Command,
     prelude::{
         info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Entity,
@@ -175,7 +176,7 @@ where
 
     fn update_tile_material(
         added_tiles: Query<
-            (&Position, Option<&T>, Option<&EmptyTile>),
+            (&Position, Option<&Owner>, Option<&T>, Option<&EmptyTile>),
             Or<(Added<T>, Added<EmptyTile>)>,
         >,
         tilemaps: Query<&TilemapEntities, With<Tilemap>>,
@@ -188,7 +189,7 @@ where
             return;
         };
 
-        for (position, tile, empty) in &added_tiles {
+        for (position, owner, tile, empty) in &added_tiles {
             info!("Tile added (or  removed)");
             let hex = **position;
             if let Some(mut material) = tiles
@@ -196,9 +197,12 @@ where
                 .and_then(|&entity| materials.get_mut(entity).ok())
             {
                 info!("Material is recognized");
-                if let Some(_) = tile {
-                    info!("Change to tile material {:?}", T::material(&asset_server));
-                    *material = material_assets.add(T::material(&asset_server));
+                if let (Some(owner), Some(_)) = (owner, tile) {
+                    info!(
+                        "Change to tile material {:?}",
+                        T::material(&asset_server).color
+                    );
+                    *material = material_assets.add(T::material(&asset_server).color.darker(0.2));
                 }
 
                 if let Some(_) = empty {
