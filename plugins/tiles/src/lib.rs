@@ -1,7 +1,7 @@
 use std::{any::TypeId, marker::PhantomData};
 
 use bevy::{
-    color::Luminance,
+    color::{Color, Mix},
     ecs::world::Command,
     prelude::{
         info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Entity,
@@ -10,7 +10,7 @@ use bevy::{
     },
 };
 
-use game_loop::{GameLoopSystems, GamePhase, InGame};
+use game_loop::{GameLoopSystems, GamePhase, InGame, PlayerColorAdjuster};
 pub use lasers;
 use lasers::{
     Amplification, Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation,
@@ -87,7 +87,16 @@ where
     fn activate_tiles(
         mut commands: Commands,
         activated_games: Query<(Entity, &GamePhase), Changed<GamePhase>>,
-        activated_tiles: Query<(Entity, &TileParameters, Option<&Owner>, &T, &InGame)>,
+        activated_tiles: Query<(
+            Entity,
+            &Position,
+            Option<&Direction>,
+            Option<&Rotation>,
+            Option<&Amplification>,
+            Option<&Owner>,
+            &T,
+            &InGame,
+        )>,
     ) {
         let mut sorted_tiles = activated_tiles.iter().sort::<&InGame>().peekable();
 
@@ -96,8 +105,8 @@ where
                 continue;
             }
 
-            let Some((entity, parameters, owner, tile, _)) =
-                sorted_tiles.find(|(_, _, _, _, in_game)| ***in_game == game)
+            let Some((entity, position, direction, rotation, amplification, owner, tile, _)) =
+                sorted_tiles.find(|(_, _, _, _, _, _, _, in_game)| ***in_game == game)
             else {
                 info!(
                     "failed to find tiles for game {:?}! None exist or invalid sort(?)",
@@ -105,18 +114,20 @@ where
                 );
                 continue;
             };
-
-            commands.add(tile.activate(entity, *parameters, owner.and_then(|owner| Some(owner.0))));
+            let parameters = TileParameters::new(position, direction, rotation, amplification);
+            commands.add(tile.activate(entity, parameters, owner.and_then(|owner| Some(owner.0))));
 
             while sorted_tiles
                 .peek()
-                .is_some_and(|(_, _, _, _, in_game)| ***in_game == game)
+                .is_some_and(|(_, _, _, _, _, _, _, in_game)| ***in_game == game)
             {
-                let (entity, parameters, owner, tile, _) = sorted_tiles.next().unwrap();
+                let (entity, position, direction, rotation, amplification, owner, tile, _) =
+                    sorted_tiles.next().unwrap();
 
+                let parameters = TileParameters::new(position, direction, rotation, amplification);
                 commands.add(tile.activate(
                     entity,
-                    *parameters,
+                    parameters,
                     owner.and_then(|owner| Some(owner.0)),
                 ));
             }
@@ -182,6 +193,7 @@ where
         tilemaps: Query<&TilemapEntities, With<Tilemap>>,
         mut materials: Query<&mut Handle<ColorMaterial>>,
         mut material_assets: ResMut<Assets<ColorMaterial>>,
+        players: Query<&PlayerColorAdjuster>,
         asset_server: Res<AssetServer>,
         empty_tile_material: Res<EmptyTileMaterial>,
     ) {
@@ -198,11 +210,16 @@ where
             {
                 info!("Material is recognized");
                 if let (Some(owner), Some(_)) = (owner, tile) {
-                    info!(
-                        "Change to tile material {:?}",
-                        T::material(&asset_server).color
-                    );
-                    *material = material_assets.add(T::material(&asset_server).color.darker(0.2));
+                    if let Ok(darkening_factor) = players.get((*owner).0) {
+                        *material = material_assets.add(
+                            T::material(&asset_server)
+                                .color
+                                .mix(&Color::BLACK, **darkening_factor),
+                        );
+                    } else {
+                        *material = material_assets.add(T::material(&asset_server).color);
+                        info!("Player color query failed, material changed without darkening")
+                    }
                 }
 
                 if let Some(_) = empty {
@@ -253,6 +270,22 @@ pub struct TileParameters {
 }
 
 impl TileParameters {
+    pub fn new(
+        position: &Position,
+        direction: Option<&Direction>,
+        rotation: Option<&Rotation>,
+        amplification: Option<&Amplification>,
+    ) -> TileParameters {
+        let direction = direction.and_then(|direction| Some(*direction));
+        let rotation = rotation.and_then(|rotation| Some(*rotation));
+        let amplification = amplification.and_then(|amplification| Some(*amplification));
+        Self {
+            position: *position,
+            direction,
+            rotation,
+            amplification,
+        }
+    }
     pub fn from_position(position: &Position) -> TileParameters {
         Self {
             position: *position,

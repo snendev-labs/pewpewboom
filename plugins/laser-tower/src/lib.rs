@@ -74,11 +74,8 @@ impl Command for LaserTowerSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 LaserTower,
-                TileParameters {
-                    position: self.position,
-                    direction: Some(self.direction),
-                    ..default()
-                },
+                self.position,
+                self.direction,
                 Owner::new(self.player),
                 game.clone(),
             ));

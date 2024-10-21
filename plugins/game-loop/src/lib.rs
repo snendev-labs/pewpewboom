@@ -27,7 +27,15 @@ impl GameLoopPlugin {
     ) {
         for new_game in &new_games {
             let players = (0..2)
-                .map(|_| commands.spawn((Player, InGame(new_game))).id())
+                .map(|index| {
+                    commands
+                        .spawn((
+                            Player,
+                            InGame(new_game),
+                            PlayerColorAdjuster((index as f32 / 2.) * 0.5),
+                        ))
+                        .id()
+                })
                 .collect();
 
             commands.entity(new_game).insert(GamePlayers(players));
@@ -133,6 +141,11 @@ pub struct GameInstanceBundle {
 #[derive(Debug)]
 #[derive(Component, Reflect)]
 pub struct Player;
+
+// Probably move this somewhere more appropriate later...
+#[derive(Clone, Copy, Debug, Default)]
+#[derive(Component, Deref, Reflect)]
+pub struct PlayerColorAdjuster(pub f32);
 
 #[derive(Debug)]
 #[derive(Component, Reflect)]

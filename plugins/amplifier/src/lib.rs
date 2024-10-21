@@ -65,7 +65,7 @@ impl Command for AmplifierSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 AmplifierTile,
-                self.position.clone(),
+                self.position,
                 Owner::new(self.player),
                 game.clone(),
             ));

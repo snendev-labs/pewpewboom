@@ -236,7 +236,8 @@ impl ShopPlugin {
             }
         }
         // todo: check that tile isn't occupied
-
+        // Only checking for empty tiles and returning them to empty material, but filled tiles are
+        // changed permanently - this is the bug
         if targeted_tile.as_deref().cloned() != *last_target {
             if let Some(target) = last_target
                 .as_ref()

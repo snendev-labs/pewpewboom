@@ -20,10 +20,6 @@ impl Money {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-#[derive(Component, Deref, Reflect)]
-pub struct PlayerColorAdjuster(pub f32);
-
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct MerchId(usize);

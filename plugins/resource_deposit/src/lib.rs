@@ -59,10 +59,7 @@ pub struct ResourceDepositSpawn {
 
 impl Command for ResourceDepositSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((
-            ResourceDepositTile,
-            TileParameters::from_position(&self.position),
-        )); // Needs the InGame added here too
+        world.spawn((ResourceDepositTile, self.position)); // Needs the InGame added here too
     }
 }
 

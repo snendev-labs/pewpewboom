@@ -4,7 +4,7 @@ use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use bevy_anyhow_alert::*;
 
-use game_loop::{GamePlayers, Player};
+use game_loop::Player;
 use tiles::TileSpawnEvent;
 
 mod components;
@@ -34,25 +34,9 @@ impl Plugin for MerchPlugin {
 }
 
 impl MerchPlugin {
-    fn spawn_shoppers(
-        mut commands: Commands,
-        added_players: Query<Entity, Added<Player>>,
-        game_players: Query<&GamePlayers>,
-    ) {
-        let Ok(total_players) = game_players
-            .get_single()
-            .and_then(|players| Ok(players.len()))
-        else {
-            return;
-        };
-        let mut count_players = 0;
-        for (index, player) in added_players.iter().enumerate() {
-            count_players += 1;
-            commands.entity(player).insert((
-                Shopper,
-                Money::new(50),
-                PlayerColorAdjuster((index as f32 / total_players as f32) * 0.5),
-            ));
+    fn spawn_shoppers(mut commands: Commands, added_players: Query<Entity, Added<Player>>) {
+        for player in &added_players {
+            commands.entity(player).insert((Shopper, Money::new(50)));
         }
     }
 
