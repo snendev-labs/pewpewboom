@@ -70,11 +70,8 @@ impl Command for RotaterSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 RotaterTile,
-                TileParameters {
-                    position: self.position,
-                    rotation: Some(self.rotation),
-                    ..default()
-                },
+                self.position,
+                self.rotation,
                 Owner::new(self.player),
                 game.clone(),
             ));

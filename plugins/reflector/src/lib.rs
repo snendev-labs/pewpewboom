@@ -70,11 +70,8 @@ impl Command for ReflectorSpawn {
         if let Some(game) = world.get::<InGame>(self.player) {
             world.spawn((
                 ReflectorTile,
-                TileParameters {
-                    position: self.position,
-                    direction: Some(self.direction),
-                    ..default()
-                },
+                self.position,
+                self.direction,
                 Owner::new(self.player),
                 game.clone(),
             ));

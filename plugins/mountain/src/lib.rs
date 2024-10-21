@@ -54,7 +54,7 @@ pub struct MountainSpawn {
 
 impl Command for MountainSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((MountainTile, TileParameters::from_position(&self.position)));
+        world.spawn((MountainTile, self.position));
         // Needs the InGame added here too
     }
 }

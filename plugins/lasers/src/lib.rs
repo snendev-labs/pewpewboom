@@ -126,7 +126,7 @@ impl LaserPlugin {
                             shooter: **laser_shooter,
                         });
                         laser_path_events.send(LaserPathEvent { path });
-                        break 'lasers;
+                        break 'lasers; // This is breaking the wrong loop and ending the laser path tracing prematurely missing out on other paths - needs fix
                     }
                 }
                 current_position = next_position;

@@ -53,7 +53,6 @@ impl LaserVisualPlugin {
                 })
                 .collect::<Vec<_>>();
             let total_paths = paths.len();
-            info!("Spawning simulation with paths {:?}", paths);
             if total_paths > 0 {
                 commands.spawn(LaserDrawSimulation {
                     paths,
