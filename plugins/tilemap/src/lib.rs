@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::color::palettes;
 use bevy::prelude::{
     resource_added, resource_exists_and_changed, resource_removed, App, Assets, BuildChildren,
@@ -28,6 +30,7 @@ impl Plugin for TilemapPlugin {
                     Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
                     Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
                     Self::handle_cursor_position,
+                    Self::update_cursor_directions,
                 )
                     .chain()
                     .in_set(TilemapSystems),
@@ -128,6 +131,57 @@ impl TilemapPlugin {
             }
         } else if targeted_tile.is_some() {
             commands.remove_resource::<TargetedTile>();
+        }
+    }
+
+    fn update_cursor_directions(
+        mut commands: Commands,
+        mut tiles: Query<(Entity, &Tile, Option<&mut CursorDirection>)>,
+        tilemaps: Query<&TilemapLayout, With<Tilemap>>,
+        cameras: Query<(&Camera, &GlobalTransform)>,
+        windows: Query<&Window, With<PrimaryWindow>>,
+    ) {
+        let Ok(window) = windows.get_single() else {
+            return;
+        };
+        let Ok((camera, camera_transform)) = cameras.get_single() else {
+            return;
+        };
+        let Ok(layout) = tilemaps.get_single() else {
+            return;
+        };
+        let Some(position) = window
+            .cursor_position()
+            .and_then(|position| camera.viewport_to_world_2d(camera_transform, position))
+        else {
+            return;
+        };
+
+        for (tile_entity, tile, cursor_direction) in &mut tiles {
+            let tile_position = layout.hex_to_world_pos(**tile);
+            let current_direction = match (tile_position - position).to_angle() {
+                theta if theta < PI / 3. && theta >= 0. => {
+                    CursorDirection(EdgeDirection::FLAT_NORTH_EAST)
+                }
+                theta if theta >= PI / 3. && theta < 2. * PI / 3. => {
+                    CursorDirection(EdgeDirection::FLAT_NORTH)
+                }
+                theta if theta >= 2. * PI / 3. && theta <= PI => {
+                    CursorDirection(EdgeDirection::FLAT_NORTH_WEST)
+                }
+                theta if theta >= -PI && theta < -2. * PI / 3. => {
+                    CursorDirection(EdgeDirection::FLAT_SOUTH_WEST)
+                }
+                theta if theta >= -2. * PI / 3. && theta < -PI / 3. => {
+                    CursorDirection(EdgeDirection::FLAT_SOUTH)
+                }
+                _ => CursorDirection(EdgeDirection::FLAT_SOUTH_EAST),
+            };
+            if let Some(mut direction) = cursor_direction {
+                *direction = current_direction
+            } else {
+                commands.entity(tile_entity).insert(current_direction);
+            }
         }
     }
 
@@ -338,3 +392,7 @@ pub struct TargetedTile {
     pub tile: Entity,
     pub tilemap: Entity,
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct CursorDirection(pub EdgeDirection);
