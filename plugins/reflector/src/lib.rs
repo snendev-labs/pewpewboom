@@ -1,7 +1,13 @@
-use bevy::{color::palettes, ecs::world::Command, prelude::*};
+use bevy::{
+    color::palettes,
+    ecs::{system::SystemState, world::Command},
+    prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+};
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Direction, Position, Reflection},
     Owner, Tile, TileParameters, TilePlugin,
@@ -67,14 +73,42 @@ pub struct ReflectorSpawn {
 
 impl Command for ReflectorSpawn {
     fn apply(self, world: &mut World) {
+        let mut system_state: SystemState<(
+            Query<&TilemapLayout>,
+            ResMut<Assets<Mesh>>,
+            ResMut<Assets<ColorMaterial>>,
+        )> = SystemState::new(world);
+
+        let (layout, mut meshes, mut materials) = system_state.get_mut(world);
+
+        let Ok(translation) = layout
+            .get_single()
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(0.)))
+        else {
+            info!("Did not get the single tilemap layout for the game");
+            return;
+        };
+
+        let mesh = Mesh2dHandle(meshes.add(Rectangle::new(50., 5.)));
+        let material = materials.add(Color::BLACK);
+
         if let Some(game) = world.get::<InGame>(self.player) {
-            world.spawn((
-                ReflectorTile,
-                self.position,
-                self.direction,
-                Owner::new(self.player),
-                game.clone(),
-            ));
+            world
+                .spawn((
+                    ReflectorTile,
+                    self.position,
+                    self.direction,
+                    Owner::new(self.player),
+                    game.clone(),
+                ))
+                .with_children(|_| {
+                    MaterialMesh2dBundle {
+                        mesh,
+                        material,
+                        transform: Transform::from_translation(translation),
+                        ..default()
+                    };
+                });
         }
     }
 }

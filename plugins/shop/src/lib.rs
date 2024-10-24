@@ -10,7 +10,8 @@ use sickle_ui::{
 
 use game_loop::{GamePhase, GamePlayers, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
-use tilemap::{EmptyTile, EmptyTileMaterial, TargetedTile};
+use tilemap::{CursorDirection, EmptyTile, EmptyTileMaterial, TargetedTile, Tile, TilemapEntities};
+use tiles::lasers::{Direction, Position, Rotation};
 
 pub struct ShopPlugin;
 
@@ -294,7 +295,7 @@ impl ShopPlugin {
         mouse_input: Res<ButtonInput<MouseButton>>,
         selected_merch: Option<Res<SelectedMerch>>,
         targeted_tile: Option<Res<TargetedTile>>,
-        purchase_tile: Option<ResMut<PurchaseOnTile>>,
+        mut purchase_tile: Option<ResMut<PurchaseOnTile>>,
         controlling_player: Res<ControllingPlayer>,
         capture: Option<Res<CursorCapture>>,
     ) {
@@ -317,7 +318,7 @@ impl ShopPlugin {
                     ));
 
                     if let Some(tile) = purchase_tile.as_deref_mut() {
-                        *tile = targeted_tile.tile;
+                        **tile = targeted_tile.tile;
                     } else {
                         commands.insert_resource(PurchaseOnTile(targeted_tile.tile));
                     }
@@ -329,18 +330,19 @@ impl ShopPlugin {
     fn adjust_tile_direction(
         parameters: Query<(&Position, Option<&Direction>, Option<&Rotation>)>,
         tilemaps: Query<&TilemapEntities>,
+        tiles: Query<&CursorDirection, With<Tile>>,
         purchase_tile: Res<PurchaseOnTile>,
     ) {
         for tilemap in &tilemaps {
             let Some((purchase_tile, _)) = tilemap
-                .tiles
                 .iter()
-                .find(|(tile, entity)| entity == *purchase_tile)
+                .find(|(tile, entity)| **entity == **purchase_tile)
             else {
                 panic!("Unable to locate the purchase tile for latest purchase")
             };
-            let Some((position, _, _)) =
-                parameters.find(|position, _, _| *position == *purchase_tile)
+            let Some((position, _, _)) = parameters
+                .iter()
+                .find(|(position, _, _)| ***position == *purchase_tile)
             else {
                 panic!("No existing tile matches the purchase tile position")
             };
@@ -401,5 +403,5 @@ pub struct ShopPlayerSwitch;
 pub struct ControllingPlayer(Entity);
 
 #[derive(Clone, Debug)]
-#[derive(Deref, Resource, Reflect)]
+#[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct PurchaseOnTile(Entity);
