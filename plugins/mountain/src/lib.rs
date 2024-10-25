@@ -2,7 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use health::Health;
 use tiles::{
-    lasers::{Consumption, Direction, Position, Rotation},
+    lasers::{Consumption, Direction, Position},
     Tile, TileParameters, TilePlugin,
 };
 pub struct MountainPlugin;
@@ -18,10 +18,8 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
-    fn spawn(parameters: TileParameters, _player: Entity) -> impl Command {
-        MountainSpawn {
-            position: parameters.position,
-        }
+    fn spawn(position: Position, _player: Entity) -> impl Command {
+        MountainSpawn { position }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {

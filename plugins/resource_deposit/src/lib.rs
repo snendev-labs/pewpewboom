@@ -22,10 +22,8 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
-    fn spawn(parameters: TileParameters, _player: Entity) -> impl Command {
-        ResourceDepositSpawn {
-            position: parameters.position,
-        }
+    fn spawn(position: Position, _player: Entity) -> impl Command {
+        ResourceDepositSpawn { position }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {

@@ -19,15 +19,15 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity) -> impl Command {
         HQSpawn {
-            position: parameters.position,
+            position: position,
             player: player,
         }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::GREEN))
+        Color::Srgba(palettes::css::GREEN).into()
     }
 
     fn activate(

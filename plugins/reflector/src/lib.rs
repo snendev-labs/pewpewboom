@@ -1,7 +1,15 @@
-use bevy::{color::palettes, ecs::world::Command, prelude::*};
+use std::f32::consts::PI;
+
+use bevy::{
+    color::palettes,
+    ecs::{system::SystemState, world::Command},
+    prelude::*,
+    sprite::MaterialMesh2dBundle,
+};
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Direction, Position, Reflection},
     Owner, Tile, TileParameters, TilePlugin,
@@ -11,8 +19,30 @@ pub struct ReflectorPlugin;
 
 impl Plugin for ReflectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<ReflectorTile>::default());
+        app.add_plugins(TilePlugin::<ReflectorTile>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<ReflectorTile>();
+    }
+}
+
+impl ReflectorPlugin {
+    fn update_marker(
+        tiles: Query<&Direction, (With<ReflectorTile>, Changed<Direction>)>,
+        mut markers: Query<(&Parent, &mut Transform), With<ReflectorMarker>>,
+    ) {
+        for (parent, mut transform) in &mut markers {
+            if let Ok(direction) = tiles.get(**parent) {
+                *transform = match *direction {
+                    Direction::North | Direction::South => Transform::IDENTITY,
+                    Direction::Northeast | Direction::Southwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                    }
+                    Direction::Northwest | Direction::Southeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -21,16 +51,12 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        ReflectorSpawn {
-            position: parameters.position,
-            direction: parameters.direction.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        ReflectorSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
+        Color::Srgba(palettes::css::CADET_BLUE).into()
     }
 
     fn activate(
@@ -61,20 +87,52 @@ impl Merchandise for ReflectorTile {
 
 pub struct ReflectorSpawn {
     position: Position,
-    direction: Direction,
     player: Entity,
 }
 
 impl Command for ReflectorSpawn {
     fn apply(self, world: &mut World) {
+        let mut system_state: SystemState<(
+            Query<&TilemapLayout>,
+            ResMut<Assets<Mesh>>,
+            ResMut<Assets<ColorMaterial>>,
+        )> = SystemState::new(world);
+
+        let (layout, mut meshes, mut materials) = system_state.get_mut(world);
+
+        let Ok(translation) = layout
+            .get_single()
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(11.)))
+        else {
+            info!("Did not get the single tilemap layout for the game");
+            return;
+        };
+
+        let rectangle = meshes.add(Rectangle::new(60., 5.));
+        let black = materials.add(Color::BLACK);
+
         if let Some(game) = world.get::<InGame>(self.player) {
-            world.spawn((
-                ReflectorTile,
-                self.position,
-                self.direction,
-                Owner::new(self.player),
-                game.clone(),
-            ));
+            world
+                .spawn((
+                    ReflectorTile,
+                    self.position,
+                    Direction::default(),
+                    Owner::new(self.player),
+                    game.clone(),
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
+                ))
+                .with_children(|builder| {
+                    builder.spawn((
+                        ReflectorMarker,
+                        MaterialMesh2dBundle {
+                            mesh: rectangle.into(),
+                            material: black,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
+                });
         }
     }
 }
@@ -89,3 +147,7 @@ impl Command for ReflectorActivate {
         world.spawn((Reflection::new(self.direction), self.position));
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct ReflectorMarker;

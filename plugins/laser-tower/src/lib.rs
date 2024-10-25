@@ -1,8 +1,16 @@
-use bevy::{color::palettes, ecs::world::Command, prelude::*};
+use std::f32::consts::PI;
+
+use bevy::{
+    color::palettes,
+    ecs::{system::SystemState, world::Command},
+    prelude::*,
+    sprite::MaterialMesh2dBundle,
+};
 
 use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Consumption, Direction, Laser, Position, Shooter},
     Owner, Tile, TileParameters, TilePlugin,
@@ -12,8 +20,37 @@ pub struct LaserTowerPlugin;
 
 impl Plugin for LaserTowerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<LaserTower>::default());
+        app.add_plugins(TilePlugin::<LaserTower>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<LaserTower>();
+    }
+}
+
+impl LaserTowerPlugin {
+    fn update_marker(
+        tiles: Query<&Direction, (With<LaserTower>, Changed<Direction>)>,
+        mut markers: Query<(&Parent, &mut Transform), With<LaserTowerMarker>>,
+    ) {
+        for (parent, mut transform) in &mut markers {
+            if let Ok(direction) = tiles.get(**parent) {
+                *transform = match *direction {
+                    Direction::North => Transform::IDENTITY,
+                    Direction::Northwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                    }
+                    Direction::Southwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(2. * PI / 3.))
+                    }
+                    Direction::South => Transform::from_rotation(Quat::from_rotation_z(PI)),
+                    Direction::Southeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(4. * PI / 3.))
+                    }
+                    Direction::Northeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(5. * PI / 3.))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -22,16 +59,12 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        LaserTowerSpawn {
-            position: parameters.position,
-            direction: parameters.direction.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        LaserTowerSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CRIMSON))
+        Color::Srgba(palettes::css::CRIMSON).into()
     }
 
     fn activate(
@@ -65,20 +98,58 @@ impl Merchandise for LaserTower {
 
 pub struct LaserTowerSpawn {
     position: Position,
-    direction: Direction,
     player: Entity,
 }
 
 impl Command for LaserTowerSpawn {
     fn apply(self, world: &mut World) {
+        let mut system_state: SystemState<(
+            Query<&TilemapLayout>,
+            ResMut<Assets<Mesh>>,
+            ResMut<Assets<ColorMaterial>>,
+        )> = SystemState::new(world);
+
+        let (layout, mut meshes, mut materials) = system_state.get_mut(world);
+
+        let Ok(translation) = layout
+            .get_single()
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(11.)))
+        else {
+            info!("Did not get the single tilemap layout for the game");
+            return;
+        };
+
+        let triangle = meshes.add(Triangle2d::new(
+            Vec2::new(-5., 0.),
+            Vec2::new(5., 0.),
+            Vec2::new(0., 40.),
+        ));
+        let white = materials.add(Color::WHITE);
+
         if let Some(game) = world.get::<InGame>(self.player) {
-            world.spawn((
-                LaserTower,
-                self.position,
-                self.direction,
-                Owner::new(self.player),
-                game.clone(),
-            ));
+            world
+                .spawn((
+                    LaserTower,
+                    self.position,
+                    Direction::default(),
+                    Owner::new(self.player),
+                    game.clone(),
+                    // Need to add dummy Transform and GlobalTransform to parent otherwise the child marker will not render due to bevy issue
+                    // Copied solution in all other markers like this one
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
+                ))
+                .with_children(|builder| {
+                    builder.spawn((
+                        LaserTowerMarker,
+                        MaterialMesh2dBundle {
+                            mesh: triangle.into(),
+                            material: white,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
+                });
         }
     }
 }
@@ -121,3 +192,7 @@ impl Command for LaserTowerOnHit {
         **laser_tower_health -= self.strength;
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct LaserTowerMarker;

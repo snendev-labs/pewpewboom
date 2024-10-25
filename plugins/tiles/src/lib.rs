@@ -18,7 +18,7 @@ use lasers::{
 use tilemap::{EmptyTile, EmptyTileMaterial, Tilemap, TilemapEntities};
 
 pub trait Tile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command;
+    fn spawn(position: Position, player: Entity) -> impl Command;
 
     fn material(asset_server: &AssetServer) -> ColorMaterial;
 
@@ -173,10 +173,7 @@ where
             for tile_spawn in &tile_spawns {
                 for (hex, tile_entity) in tilemap_entities.iter() {
                     if *tile_entity == tile_spawn.on_tile {
-                        commands.add(T::spawn(
-                            TileParameters::from_position(&Position::from(*hex)),
-                            tile_spawn.player,
-                        ));
+                        commands.add(T::spawn(Position::from(*hex), tile_spawn.player));
 
                         commands.entity(*tile_entity).remove::<EmptyTile>();
                     }

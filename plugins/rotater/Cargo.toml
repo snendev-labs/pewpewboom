@@ -7,4 +7,5 @@ edition = "2021"
 bevy = { workspace = true }
 game_loop = { workspace = true }
 merchandise = { workspace = true }
+tilemap = { workspace = true }
 tiles = { workspace = true }

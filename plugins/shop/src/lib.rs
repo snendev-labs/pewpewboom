@@ -10,7 +10,8 @@ use sickle_ui::{
 
 use game_loop::{GamePhase, GamePlayers, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
-use tilemap::{EmptyTile, EmptyTileMaterial, TargetedTile};
+use tilemap::{CursorDirection, EmptyTile, EmptyTileMaterial, TargetedTile, Tile, TilemapEntities};
+use tiles::lasers::{Direction, Position, Rotation};
 
 pub struct ShopPlugin;
 
@@ -59,6 +60,7 @@ impl ShopPlugin {
         };
         info!("Running setup ui");
         let root = commands.spawn(ShopUIRoot::bundle()).id();
+        info!("Current merch listings {:?}", merch_registry);
         commands
             .ui_builder(root)
             .column(|column| {
@@ -289,10 +291,12 @@ impl ShopPlugin {
     }
 
     fn make_purchase(
+        mut commands: Commands,
         mut purchases: EventWriter<Purchase>,
         mouse_input: Res<ButtonInput<MouseButton>>,
         selected_merch: Option<Res<SelectedMerch>>,
         targeted_tile: Option<Res<TargetedTile>>,
+        mut purchase_tile: Option<ResMut<PurchaseOnTile>>,
         controlling_player: Res<ControllingPlayer>,
         capture: Option<Res<CursorCapture>>,
     ) {
@@ -313,8 +317,36 @@ impl ShopPlugin {
                         (**merch).clone(),
                         targeted_tile.tile,
                     ));
+
+                    if let Some(tile) = purchase_tile.as_deref_mut() {
+                        **tile = targeted_tile.tile;
+                    } else {
+                        commands.insert_resource(PurchaseOnTile(targeted_tile.tile));
+                    }
                 }
             }
+        }
+    }
+
+    fn adjust_tile_direction(
+        parameters: Query<(&Position, Option<&Direction>, Option<&Rotation>)>,
+        tilemaps: Query<&TilemapEntities>,
+        tiles: Query<&CursorDirection, With<Tile>>,
+        purchase_tile: Res<PurchaseOnTile>,
+    ) {
+        for tilemap in &tilemaps {
+            let Some((purchase_tile, _)) = tilemap
+                .iter()
+                .find(|(tile, entity)| **entity == **purchase_tile)
+            else {
+                panic!("Unable to locate the purchase tile for latest purchase")
+            };
+            let Some((position, _, _)) = parameters
+                .iter()
+                .find(|(position, _, _)| ***position == *purchase_tile)
+            else {
+                panic!("No existing tile matches the purchase tile position")
+            };
         }
     }
 }
@@ -370,3 +402,7 @@ pub struct ShopPlayerSwitch;
 #[derive(Clone, Debug)]
 #[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct ControllingPlayer(Entity);
+
+#[derive(Clone, Debug)]
+#[derive(Deref, DerefMut, Resource, Reflect)]
+pub struct PurchaseOnTile(Entity);

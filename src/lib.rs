@@ -39,5 +39,7 @@ impl PluginGroup for PewPewBoomBuildingsPlugins {
             .add(laser_tower::LaserTowerPlugin)
             .add(amplifier::AmplifierPlugin)
             .add(refractor::RefractorPlugin)
+            .add(reflector::ReflectorPlugin)
+            .add(rotater::RotaterPlugin)
     }
 }
