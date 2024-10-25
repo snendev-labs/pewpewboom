@@ -2,7 +2,7 @@ use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
     prelude::*,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::MaterialMesh2dBundle,
 };
 
 use game_loop::InGame;
@@ -92,14 +92,20 @@ impl Command for RefractorSpawn {
 
         let Ok(translation) = layout
             .get_single()
-            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(1.)))
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(11.)))
         else {
             info!("Did not get the single tilemap layout for the game");
             return;
         };
 
-        let mesh = Mesh2dHandle(meshes.add(Rectangle::new(50., 5.)));
-        let material = materials.add(Color::BLACK);
+        let rectangle = meshes.add(Rectangle::new(60., 5.));
+        let black = materials.add(Color::BLACK);
+        let triangle = meshes.add(Triangle2d::new(
+            Vec2::new(-5., 8.),
+            Vec2::new(5., 8.),
+            Vec2::new(0., 18.),
+        ));
+        let red = materials.add(Color::Srgba(bevy::color::palettes::css::RED));
 
         if let Some(game) = world.get::<InGame>(self.player) {
             world
@@ -109,14 +115,24 @@ impl Command for RefractorSpawn {
                     self.direction,
                     Owner::new(self.player),
                     game.clone(),
+                    Transform::default(),
+                    GlobalTransform::default(),
                 ))
-                .with_children(|_| {
-                    MaterialMesh2dBundle {
-                        mesh,
-                        material,
+                .with_children(|builder| {
+                    info!("Spawning child marker for refractor");
+                    builder.spawn(MaterialMesh2dBundle {
+                        mesh: rectangle.into(),
+                        material: black,
                         transform: Transform::from_translation(translation),
                         ..default()
-                    };
+                    });
+
+                    builder.spawn(MaterialMesh2dBundle {
+                        mesh: triangle.into(),
+                        material: red,
+                        transform: Transform::from_translation(translation),
+                        ..default()
+                    });
                 });
         }
     }

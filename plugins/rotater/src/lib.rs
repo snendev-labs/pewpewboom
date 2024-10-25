@@ -4,7 +4,7 @@ use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
     prelude::*,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::MaterialMesh2dBundle,
 };
 
 use game_loop::InGame;
@@ -85,14 +85,17 @@ impl Command for RotaterSpawn {
 
         let Ok(translation) = layout
             .get_single()
-            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(1.)))
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(11.)))
         else {
             info!("Did not get the single tilemap layout for the game");
             return;
         };
 
-        let mesh = Mesh2dHandle(meshes.add(CircularSector::new(40., PI)));
-        let material = materials.add(Color::BLACK);
+        let sector = meshes.add(CircularSector::new(
+            40.,
+            ((self.rotation.get() % 6) as f32) * (PI / 6.),
+        ));
+        let black = materials.add(Color::BLACK);
 
         if let Some(game) = world.get::<InGame>(self.player) {
             world
@@ -102,14 +105,16 @@ impl Command for RotaterSpawn {
                     self.rotation,
                     Owner::new(self.player),
                     game.clone(),
+                    Transform::default(),
+                    GlobalTransform::default(),
                 ))
-                .with_children(|_| {
-                    MaterialMesh2dBundle {
-                        mesh,
-                        material,
+                .with_children(|builder| {
+                    builder.spawn(MaterialMesh2dBundle {
+                        mesh: sector.into(),
+                        material: black,
                         transform: Transform::from_translation(translation),
                         ..default()
-                    };
+                    });
                 });
         }
     }

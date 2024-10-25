@@ -2,7 +2,7 @@ use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
     prelude::*,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::MaterialMesh2dBundle,
 };
 
 use game_loop::InGame;
@@ -87,14 +87,18 @@ impl Command for LaserTowerSpawn {
 
         let Ok(translation) = layout
             .get_single()
-            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(1.)))
+            .and_then(|layout| Ok(layout.hex_to_world_pos(*self.position).extend(11.)))
         else {
             info!("Did not get the single tilemap layout for the game");
             return;
         };
 
-        let mesh = Mesh2dHandle(meshes.add(Rectangle::new(40., 5.)));
-        let material = materials.add(Color::BLACK);
+        let triangle = meshes.add(Triangle2d::new(
+            Vec2::new(-5., 0.),
+            Vec2::new(5., 0.),
+            Vec2::new(0., 40.),
+        ));
+        let white = materials.add(Color::WHITE);
 
         if let Some(game) = world.get::<InGame>(self.player) {
             world
@@ -104,14 +108,18 @@ impl Command for LaserTowerSpawn {
                     self.direction,
                     Owner::new(self.player),
                     game.clone(),
+                    // Need to add dummy Transform and GlobalTransform to parent otherwise the child marker will not render due to bevy issue
+                    // Copied solution in all other markers like this one
+                    Transform::default(),
+                    GlobalTransform::default(),
                 ))
-                .with_children(|_| {
-                    MaterialMesh2dBundle {
-                        mesh,
-                        material,
+                .with_children(|builder| {
+                    builder.spawn(MaterialMesh2dBundle {
+                        mesh: triangle.into(),
+                        material: white,
                         transform: Transform::from_translation(translation),
                         ..default()
-                    };
+                    });
                 });
         }
     }
