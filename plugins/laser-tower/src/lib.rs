@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
@@ -18,8 +20,37 @@ pub struct LaserTowerPlugin;
 
 impl Plugin for LaserTowerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<LaserTower>::default());
+        app.add_plugins(TilePlugin::<LaserTower>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<LaserTower>();
+    }
+}
+
+impl LaserTowerPlugin {
+    fn update_marker(
+        tiles: Query<&Direction, (With<LaserTower>, Changed<Direction>)>,
+        mut markers: Query<(&Parent, &mut Transform), With<LaserTowerMarker>>,
+    ) {
+        for (parent, mut transform) in &mut markers {
+            if let Ok(direction) = tiles.get(**parent) {
+                *transform = match *direction {
+                    Direction::North => Transform::IDENTITY,
+                    Direction::Northwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                    }
+                    Direction::Southwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(2. * PI / 3.))
+                    }
+                    Direction::South => Transform::from_rotation(Quat::from_rotation_z(PI)),
+                    Direction::Southeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(4. * PI / 3.))
+                    }
+                    Direction::Northeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(5. * PI / 3.))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -33,7 +64,7 @@ impl Tile for LaserTower {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CRIMSON))
+        Color::Srgba(palettes::css::CRIMSON).into()
     }
 
     fn activate(
@@ -105,16 +136,19 @@ impl Command for LaserTowerSpawn {
                     game.clone(),
                     // Need to add dummy Transform and GlobalTransform to parent otherwise the child marker will not render due to bevy issue
                     // Copied solution in all other markers like this one
-                    Transform::default(),
-                    GlobalTransform::default(),
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
                 ))
                 .with_children(|builder| {
-                    builder.spawn(MaterialMesh2dBundle {
-                        mesh: triangle.into(),
-                        material: white,
-                        transform: Transform::from_translation(translation),
-                        ..default()
-                    });
+                    builder.spawn((
+                        LaserTowerMarker,
+                        MaterialMesh2dBundle {
+                            mesh: triangle.into(),
+                            material: white,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
                 });
         }
     }
@@ -158,3 +192,7 @@ impl Command for LaserTowerOnHit {
         **laser_tower_health -= self.strength;
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct LaserTowerMarker;

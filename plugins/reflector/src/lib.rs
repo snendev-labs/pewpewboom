@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
@@ -17,8 +19,30 @@ pub struct ReflectorPlugin;
 
 impl Plugin for ReflectorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<ReflectorTile>::default());
+        app.add_plugins(TilePlugin::<ReflectorTile>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<ReflectorTile>();
+    }
+}
+
+impl ReflectorPlugin {
+    fn update_marker(
+        tiles: Query<&Direction, (With<ReflectorTile>, Changed<Direction>)>,
+        mut markers: Query<(&Parent, &mut Transform), With<ReflectorMarker>>,
+    ) {
+        for (parent, mut transform) in &mut markers {
+            if let Ok(direction) = tiles.get(**parent) {
+                *transform = match *direction {
+                    Direction::North | Direction::South => Transform::IDENTITY,
+                    Direction::Northeast | Direction::Southwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                    }
+                    Direction::Northwest | Direction::Southeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -95,16 +119,19 @@ impl Command for ReflectorSpawn {
                     Direction::default(),
                     Owner::new(self.player),
                     game.clone(),
-                    Transform::default(),
-                    GlobalTransform::default(),
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
                 ))
                 .with_children(|builder| {
-                    builder.spawn(MaterialMesh2dBundle {
-                        mesh: rectangle.into(),
-                        material: black,
-                        transform: Transform::from_translation(translation),
-                        ..default()
-                    });
+                    builder.spawn((
+                        ReflectorMarker,
+                        MaterialMesh2dBundle {
+                            mesh: rectangle.into(),
+                            material: black,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
                 });
         }
     }
@@ -120,3 +147,7 @@ impl Command for ReflectorActivate {
         world.spawn((Reflection::new(self.direction), self.position));
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct ReflectorMarker;

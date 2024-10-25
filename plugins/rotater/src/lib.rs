@@ -19,8 +19,52 @@ pub struct RotaterPlugin;
 
 impl Plugin for RotaterPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<RotaterTile>::default());
+        app.add_plugins(TilePlugin::<RotaterTile>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<RotaterTile>();
+    }
+}
+
+impl RotaterPlugin {
+    fn update_marker(
+        tiles: Query<&Rotation, (With<RotaterTile>, Changed<Rotation>)>,
+        mut markers: Query<(&Parent, &mut Transform, &mut Handle<Mesh>), With<RotaterMarker>>,
+        mut meshes: ResMut<Assets<Mesh>>,
+    ) {
+        for (parent, mut transform, mut mesh) in &mut markers {
+            if let Ok(rotation) = tiles.get(**parent).and_then(|rotation| Ok(**rotation % 6)) {
+                (*transform, *mesh) = match rotation {
+                    0 => (
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.)),
+                        meshes.add(CircularSector::new(40., 0.)),
+                    ),
+                    1 => (
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.)),
+                        meshes.add(CircularSector::new(40., PI / 6.)),
+                    ),
+                    2 => (
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 6.)),
+                        meshes.add(CircularSector::new(40., PI / 3.)),
+                    ),
+                    3 => (
+                        Transform::IDENTITY,
+                        meshes.add(CircularSector::new(40., PI / 2.)),
+                    ),
+                    4 => (
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 6.)),
+                        meshes.add(CircularSector::new(40., 2. * PI / 3.)),
+                    ),
+                    5 => (
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.)),
+                        meshes.add(CircularSector::new(40., 5. * PI / 6.)),
+                    ),
+                    _ => unreachable!(
+                        "All modulus cases for possible rotations should be covered already"
+                    ),
+                };
+                info!("Changed rotation marker to match parameters");
+            }
+        }
     }
 }
 
@@ -87,7 +131,7 @@ impl Command for RotaterSpawn {
         };
 
         let sector = meshes.add(CircularSector::new(40., PI / 6.));
-        let black = materials.add(Color::BLACK);
+        let white = materials.add(Color::WHITE);
 
         if let Some(game) = world.get::<InGame>(self.player) {
             world
@@ -97,16 +141,19 @@ impl Command for RotaterSpawn {
                     Rotation::new(1),
                     Owner::new(self.player),
                     game.clone(),
-                    Transform::default(),
-                    GlobalTransform::default(),
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
                 ))
                 .with_children(|builder| {
-                    builder.spawn(MaterialMesh2dBundle {
-                        mesh: sector.into(),
-                        material: black,
-                        transform: Transform::from_translation(translation),
-                        ..default()
-                    });
+                    builder.spawn((
+                        RotaterMarker,
+                        MaterialMesh2dBundle {
+                            mesh: sector.into(),
+                            material: white,
+                            transform: Transform::from_rotation(Quat::from_rotation_z(-PI / 3.)),
+                            ..default()
+                        },
+                    ));
                 });
         }
     }
@@ -122,3 +169,7 @@ impl Command for RotaterActivate {
         world.spawn((Rotation::new(self.rotation.get()), self.position));
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct RotaterMarker;

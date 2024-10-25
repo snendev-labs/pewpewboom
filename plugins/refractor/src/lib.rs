@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
@@ -18,8 +20,38 @@ pub struct RefractorPlugin;
 
 impl Plugin for RefractorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(TilePlugin::<RefractorTile>::default());
+        app.add_plugins(TilePlugin::<RefractorTile>::default())
+            .add_systems(Update, Self::update_marker);
         app.define_merchandise::<RefractorTile>();
+    }
+}
+
+impl RefractorPlugin {
+    fn update_marker(
+        tiles: Query<&Direction, (With<RefractorTile>, Changed<Direction>)>,
+        mut markers: Query<(&Parent, &mut Transform), With<RefractorMarker>>,
+    ) {
+        for (parent, mut transform) in &mut markers {
+            if let Ok(direction) = tiles.get(**parent) {
+                *transform = match *direction {
+                    Direction::North => Transform::IDENTITY,
+                    Direction::Northwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                    }
+                    Direction::Southwest => {
+                        Transform::from_rotation(Quat::from_rotation_z(2. * PI / 3.))
+                    }
+                    Direction::South => Transform::from_rotation(Quat::from_rotation_z(PI)),
+                    Direction::Southeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(4. * PI / 3.))
+                    }
+                    Direction::Northeast => {
+                        Transform::from_rotation(Quat::from_rotation_z(5. * PI / 3.))
+                    }
+                };
+                info!("Changed refractor marker transform");
+            }
+        }
     }
 }
 
@@ -96,9 +128,9 @@ impl Command for RefractorSpawn {
         let rectangle = meshes.add(Rectangle::new(60., 5.));
         let black = materials.add(Color::BLACK);
         let triangle = meshes.add(Triangle2d::new(
-            Vec2::new(-5., 8.),
-            Vec2::new(5., 8.),
-            Vec2::new(0., 18.),
+            Vec2::new(-5., -8.),
+            Vec2::new(5., -8.),
+            Vec2::new(0., -18.),
         ));
         let red = materials.add(Color::Srgba(bevy::color::palettes::css::RED));
 
@@ -110,24 +142,30 @@ impl Command for RefractorSpawn {
                     Direction::default(),
                     Owner::new(self.player),
                     game.clone(),
-                    Transform::default(),
-                    GlobalTransform::default(),
+                    Transform::from_translation(translation),
+                    GlobalTransform::from_translation(translation),
                 ))
                 .with_children(|builder| {
                     info!("Spawning child marker for refractor");
-                    builder.spawn(MaterialMesh2dBundle {
-                        mesh: rectangle.into(),
-                        material: black,
-                        transform: Transform::from_translation(translation),
-                        ..default()
-                    });
+                    builder.spawn((
+                        RefractorMarker,
+                        MaterialMesh2dBundle {
+                            mesh: rectangle.into(),
+                            material: black,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
 
-                    builder.spawn(MaterialMesh2dBundle {
-                        mesh: triangle.into(),
-                        material: red,
-                        transform: Transform::from_translation(translation),
-                        ..default()
-                    });
+                    builder.spawn((
+                        RefractorMarker,
+                        MaterialMesh2dBundle {
+                            mesh: triangle.into(),
+                            material: red,
+                            transform: Transform::default(),
+                            ..default()
+                        },
+                    ));
                 });
         }
     }
@@ -165,3 +203,7 @@ impl Command for RefractorOnHit {
         **consumer_health -= self.strength;
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component)]
+pub struct RefractorMarker;

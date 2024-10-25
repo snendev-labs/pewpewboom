@@ -347,7 +347,7 @@ impl YReflection {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-#[derive(Component, Reflect)]
+#[derive(Component, Deref, DerefMut, Reflect)]
 pub struct Rotation(u8);
 
 impl Rotation {
