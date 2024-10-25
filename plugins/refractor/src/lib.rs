@@ -28,12 +28,8 @@ impl Plugin for RefractorPlugin {
 pub struct RefractorTile;
 
 impl Tile for RefractorTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        RefractorSpawn {
-            position: parameters.position,
-            direction: parameters.direction.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        RefractorSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -76,7 +72,6 @@ impl Merchandise for RefractorTile {
 
 pub struct RefractorSpawn {
     position: Position,
-    direction: Direction,
     player: Entity,
 }
 
@@ -112,7 +107,7 @@ impl Command for RefractorSpawn {
                 .spawn((
                     RefractorTile,
                     self.position,
-                    self.direction,
+                    Direction::default(),
                     Owner::new(self.player),
                     game.clone(),
                     Transform::default(),

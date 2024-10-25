@@ -27,12 +27,8 @@ impl Plugin for ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        ReflectorSpawn {
-            position: parameters.position,
-            direction: parameters.direction.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        ReflectorSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -67,7 +63,6 @@ impl Merchandise for ReflectorTile {
 
 pub struct ReflectorSpawn {
     position: Position,
-    direction: Direction,
     player: Entity,
 }
 
@@ -97,7 +92,7 @@ impl Command for ReflectorSpawn {
                 .spawn((
                     ReflectorTile,
                     self.position,
-                    self.direction,
+                    Direction::default(),
                     Owner::new(self.player),
                     game.clone(),
                     Transform::default(),

@@ -29,12 +29,8 @@ impl Plugin for RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        RotaterSpawn {
-            position: parameters.position,
-            rotation: parameters.rotation.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        RotaterSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -69,7 +65,6 @@ impl Merchandise for RotaterTile {
 
 pub struct RotaterSpawn {
     position: Position,
-    rotation: Rotation,
     player: Entity,
 }
 
@@ -91,10 +86,7 @@ impl Command for RotaterSpawn {
             return;
         };
 
-        let sector = meshes.add(CircularSector::new(
-            40.,
-            ((self.rotation.get() % 6) as f32) * (PI / 6.),
-        ));
+        let sector = meshes.add(CircularSector::new(40., PI / 6.));
         let black = materials.add(Color::BLACK);
 
         if let Some(game) = world.get::<InGame>(self.player) {
@@ -102,7 +94,7 @@ impl Command for RotaterSpawn {
                 .spawn((
                     RotaterTile,
                     self.position,
-                    self.rotation,
+                    Rotation::new(1),
                     Owner::new(self.player),
                     game.clone(),
                     Transform::default(),

@@ -28,12 +28,8 @@ impl Plugin for LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        LaserTowerSpawn {
-            position: parameters.position,
-            direction: parameters.direction.unwrap_or_default(),
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        LaserTowerSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -71,7 +67,6 @@ impl Merchandise for LaserTower {
 
 pub struct LaserTowerSpawn {
     position: Position,
-    direction: Direction,
     player: Entity,
 }
 
@@ -105,7 +100,7 @@ impl Command for LaserTowerSpawn {
                 .spawn((
                     LaserTower,
                     self.position,
-                    self.direction,
+                    Direction::default(),
                     Owner::new(self.player),
                     game.clone(),
                     // Need to add dummy Transform and GlobalTransform to parent otherwise the child marker will not render due to bevy issue

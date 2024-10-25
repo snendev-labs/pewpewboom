@@ -21,11 +21,8 @@ impl Plugin for AmplifierPlugin {
 pub struct AmplifierTile;
 
 impl Tile for AmplifierTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
-        AmplifierSpawn {
-            position: parameters.position,
-            player,
-        }
+    fn spawn(position: Position, player: Entity) -> impl Command {
+        AmplifierSpawn { position, player }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {

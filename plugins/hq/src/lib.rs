@@ -19,9 +19,9 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn spawn(parameters: TileParameters, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity) -> impl Command {
         HQSpawn {
-            position: parameters.position,
+            position: position,
             player: player,
         }
     }
