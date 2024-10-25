@@ -32,7 +32,7 @@ impl Tile for ReflectorTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
+        Color::Srgba(palettes::css::CADET_BLUE).into()
     }
 
     fn activate(

@@ -34,7 +34,7 @@ impl Tile for RotaterTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CADET_BLUE))
+        Color::Srgba(palettes::css::CADET_BLUE).into()
     }
 
     fn activate(
@@ -54,7 +54,7 @@ impl Tile for RotaterTile {
 
 impl Merchandise for RotaterTile {
     const PRICE: Money = Money::new(5);
-    const NAME: &'static str = "Rotater";
+    const NAME: &'static str = "Rotater Tower";
 
     fn material(asset_server: &AssetServer) -> ColorMaterial {
         let mut base = <Self as Tile>::material(asset_server);

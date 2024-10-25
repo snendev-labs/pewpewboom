@@ -26,7 +26,7 @@ impl Tile for AmplifierTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::DARK_ORANGE))
+        Color::Srgba(palettes::css::DARK_ORANGE).into()
     }
 
     fn activate(

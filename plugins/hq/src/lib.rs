@@ -27,7 +27,7 @@ impl Tile for HQTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::GREEN))
+        Color::Srgba(palettes::css::GREEN).into()
     }
 
     fn activate(

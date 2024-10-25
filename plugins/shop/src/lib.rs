@@ -60,6 +60,7 @@ impl ShopPlugin {
         };
         info!("Running setup ui");
         let root = commands.spawn(ShopUIRoot::bundle()).id();
+        info!("Current merch listings {:?}", merch_registry);
         commands
             .ui_builder(root)
             .column(|column| {

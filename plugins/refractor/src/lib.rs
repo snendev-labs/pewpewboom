@@ -33,7 +33,7 @@ impl Tile for RefractorTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::CORNFLOWER_BLUE))
+        Color::Srgba(palettes::css::CORNFLOWER_BLUE).into()
     }
 
     fn activate(
