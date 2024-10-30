@@ -9,6 +9,7 @@ use bevy::{
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Position, Rotation},
@@ -143,6 +144,7 @@ impl Command for RotaterSpawn {
                     game.clone(),
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     builder.spawn((

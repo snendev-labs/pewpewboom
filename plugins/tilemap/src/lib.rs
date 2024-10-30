@@ -100,6 +100,7 @@ impl TilemapPlugin {
         cameras: Query<(&Camera, &GlobalTransform)>,
         tilemaps: Query<(Entity, &TilemapLayout, &TilemapEntities)>,
         targeted_tile: Option<ResMut<TargetedTile>>,
+        cursor_position: Option<ResMut<CursorWorldPosition>>,
     ) {
         let Ok(window) = windows.get_single() else {
             return;
@@ -116,6 +117,12 @@ impl TilemapPlugin {
         else {
             return;
         };
+
+        if let Some(mut cursor_position) = cursor_position {
+            **cursor_position = position
+        } else {
+            commands.insert_resource(CursorWorldPosition(position))
+        }
 
         // convert to hex and back to "snap" to the hex border
         let coord: Hex = layout.world_pos_to_hex(position);
@@ -159,7 +166,7 @@ impl TilemapPlugin {
 
         for (tile_entity, tile, cursor_direction) in &mut tiles {
             let tile_position = layout.hex_to_world_pos(**tile);
-            let current_direction = match (tile_position - position).to_angle() {
+            let current_direction = match (position - tile_position).to_angle() {
                 theta if theta < PI / 3. && theta >= 0. => {
                     CursorDirection(EdgeDirection::FLAT_NORTH_EAST)
                 }
@@ -394,5 +401,9 @@ pub struct TargetedTile {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[derive(Component)]
-pub struct CursorDirection(pub EdgeDirection);
+#[derive(Resource, Deref, DerefMut)]
+pub struct CursorWorldPosition(Vec2);
+
+#[derive(Clone, Copy, Debug)]
+#[derive(Component, Deref, DerefMut)]
+pub struct CursorDirection(EdgeDirection);

@@ -10,6 +10,7 @@ use bevy::{
 use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Consumption, Direction, Position, Refraction},
@@ -144,6 +145,7 @@ impl Command for RefractorSpawn {
                     game.clone(),
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     info!("Spawning child marker for refractor");

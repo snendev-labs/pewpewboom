@@ -9,6 +9,7 @@ use bevy::{
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Direction, Position, Reflection},
@@ -121,6 +122,7 @@ impl Command for ReflectorSpawn {
                     game.clone(),
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     builder.spawn((
