@@ -2370,6 +2370,7 @@ dependencies = [
  "game_loop",
  "health",
  "merchandise",
+ "shop",
  "tilemap",
  "tiles",
 ]
@@ -3348,6 +3349,7 @@ dependencies = [
  "bevy",
  "game_loop",
  "merchandise",
+ "shop",
  "tilemap",
  "tiles",
 ]
@@ -3360,6 +3362,7 @@ dependencies = [
  "game_loop",
  "health",
  "merchandise",
+ "shop",
  "tilemap",
  "tiles",
 ]
@@ -3455,6 +3458,7 @@ dependencies = [
  "bevy",
  "game_loop",
  "merchandise",
+ "shop",
  "tilemap",
  "tiles",
 ]

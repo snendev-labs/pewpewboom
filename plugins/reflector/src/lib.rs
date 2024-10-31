@@ -9,6 +9,7 @@ use bevy::{
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Direction, Position, Reflection},
@@ -35,10 +36,10 @@ impl ReflectorPlugin {
                 *transform = match *direction {
                     Direction::North | Direction::South => Transform::IDENTITY,
                     Direction::Northeast | Direction::Southwest => {
-                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
                     }
                     Direction::Northwest | Direction::Southeast => {
-                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
                     }
                 }
             }
@@ -121,6 +122,7 @@ impl Command for ReflectorSpawn {
                     game.clone(),
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     builder.spawn((

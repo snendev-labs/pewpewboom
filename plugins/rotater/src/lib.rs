@@ -4,11 +4,12 @@ use bevy::{
     color::palettes,
     ecs::{system::SystemState, world::Command},
     prelude::*,
-    sprite::MaterialMesh2dBundle,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
 
 use game_loop::InGame;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Position, Rotation},
@@ -28,7 +29,7 @@ impl Plugin for RotaterPlugin {
 impl RotaterPlugin {
     fn update_marker(
         tiles: Query<&Rotation, (With<RotaterTile>, Changed<Rotation>)>,
-        mut markers: Query<(&Parent, &mut Transform, &mut Handle<Mesh>), With<RotaterMarker>>,
+        mut markers: Query<(&Parent, &mut Transform, &mut Mesh2dHandle), With<RotaterMarker>>,
         mut meshes: ResMut<Assets<Mesh>>,
     ) {
         for (parent, mut transform, mut mesh) in &mut markers {
@@ -36,27 +37,27 @@ impl RotaterPlugin {
                 (*transform, *mesh) = match rotation {
                     0 => (
                         Transform::from_rotation(Quat::from_rotation_z(-PI / 3.)),
-                        meshes.add(CircularSector::new(40., 0.)),
+                        meshes.add(CircularSector::new(40., 0.)).into(),
                     ),
                     1 => (
                         Transform::from_rotation(Quat::from_rotation_z(-PI / 3.)),
-                        meshes.add(CircularSector::new(40., PI / 6.)),
+                        meshes.add(CircularSector::new(40., PI / 6.)).into(),
                     ),
                     2 => (
                         Transform::from_rotation(Quat::from_rotation_z(-PI / 6.)),
-                        meshes.add(CircularSector::new(40., PI / 3.)),
+                        meshes.add(CircularSector::new(40., PI / 3.)).into(),
                     ),
                     3 => (
                         Transform::IDENTITY,
-                        meshes.add(CircularSector::new(40., PI / 2.)),
+                        meshes.add(CircularSector::new(40., PI / 2.)).into(),
                     ),
                     4 => (
                         Transform::from_rotation(Quat::from_rotation_z(PI / 6.)),
-                        meshes.add(CircularSector::new(40., 2. * PI / 3.)),
+                        meshes.add(CircularSector::new(40., 2. * PI / 3.)).into(),
                     ),
                     5 => (
                         Transform::from_rotation(Quat::from_rotation_z(PI / 3.)),
-                        meshes.add(CircularSector::new(40., 5. * PI / 6.)),
+                        meshes.add(CircularSector::new(40., 5. * PI / 6.)).into(),
                     ),
                     _ => unreachable!(
                         "All modulus cases for possible rotations should be covered already"
@@ -143,6 +144,7 @@ impl Command for RotaterSpawn {
                     game.clone(),
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     builder.spawn((

@@ -216,28 +216,16 @@ impl Direction {
         }
     }
 
-    pub fn hex_to_dir(hex_direction: &EdgeDirection) -> Self {
-        match *hex_direction {
-            EdgeDirection::FLAT_NORTH => Self::North,
-            EdgeDirection::FLAT_SOUTH => Self::South,
-            EdgeDirection::FLAT_NORTH_EAST => Self::Northeast,
-            EdgeDirection::FLAT_SOUTH_EAST => Self::Southeast,
-            EdgeDirection::FLAT_NORTH_WEST => Self::Northwest,
-            EdgeDirection::FLAT_SOUTH_WEST => Self::Southwest,
-            _ => unreachable!("Edge direction should already produce something modded to within 0..6 in its inner field, so the previous cases should be comprehensive"),
-        }
-    }
-
     pub fn opposite(&self) -> Self {
-        Self::hex_to_dir(&self.as_hex().const_neg())
+        Self::from(self.as_hex().const_neg())
     }
 
     pub fn counterclockwise(&self, offset: u8) -> Self {
-        Self::hex_to_dir(&self.as_hex().rotate_ccw(offset))
+        Self::from(self.as_hex().rotate_ccw(offset))
     }
 
     pub fn clockwise(&self, offset: u8) -> Self {
-        Self::hex_to_dir(&self.as_hex().rotate_cw(offset))
+        Self::from(self.as_hex().rotate_cw(offset))
     }
 
     // Returns the number of clockwise steps around hexagon to reach self from start
@@ -256,6 +244,20 @@ impl Direction {
             opposite_direction,
             opposite_direction.counterclockwise(1),
         ]
+    }
+}
+
+impl From<EdgeDirection> for Direction {
+    fn from(value: EdgeDirection) -> Self {
+        match value {
+            EdgeDirection::FLAT_NORTH => Self::North,
+            EdgeDirection::FLAT_SOUTH => Self::South,
+            EdgeDirection::FLAT_NORTH_EAST => Self::Northeast,
+            EdgeDirection::FLAT_SOUTH_EAST => Self::Southeast,
+            EdgeDirection::FLAT_NORTH_WEST => Self::Northwest,
+            EdgeDirection::FLAT_SOUTH_WEST => Self::Southwest,
+            _ => unreachable!("Edge direction should already produce something modded to within 0..6 in its inner field, so the previous cases should be comprehensive"),
+        }
     }
 }
 

@@ -1,4 +1,11 @@
-use bevy::{color::palettes, prelude::*, window::PrimaryWindow};
+use std::f32::consts::PI;
+
+use bevy::{
+    color::palettes,
+    prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    window::PrimaryWindow,
+};
 use sickle_ui::{
     prelude::{
         LabelConfig, RadioGroup, UiBuilderExt, UiColumnExt, UiContainerExt, UiLabelExt,
@@ -10,7 +17,9 @@ use sickle_ui::{
 
 use game_loop::{GamePhase, GamePlayers, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
-use tilemap::{CursorDirection, EmptyTile, EmptyTileMaterial, TargetedTile, Tile, TilemapEntities};
+use tilemap::{
+    CursorDirection, CursorWorldPosition, EmptyTile, EmptyTileMaterial, TargetedTile, Tile,
+};
 use tiles::lasers::{Direction, Position, Rotation};
 
 pub struct ShopPlugin;
@@ -39,6 +48,11 @@ impl Plugin for ShopPlugin {
                         .and_then(resource_exists::<ControllingPlayer>),
                 ),
                 Self::clear_shop,
+                Self::spawn_drag_markers,
+                Self::update_tile_parameters,
+                Self::start_drag.run_if(resource_exists::<CursorWorldPosition>),
+                Self::handle_drag,
+                Self::stop_drag,
             )
                 .chain()
                 .in_set(ShopSystems),
@@ -272,6 +286,7 @@ impl ShopPlugin {
         mut capture: ResMut<CursorCapture>,
         windows: Query<&Window, With<PrimaryWindow>>,
         nodes: Query<(&Node, &GlobalTransform)>,
+        dragging: Query<&Dragging>,
     ) {
         let Ok(window) = windows.get_single() else {
             return;
@@ -281,13 +296,15 @@ impl ShopPlugin {
             return;
         };
 
-        capture.0 = nodes.iter().any(|(node, transform)| {
+        let on_shop = nodes.iter().any(|(node, transform)| {
             let node_position = transform.translation().xy();
             let half_size = 0.5 * node.size();
             let min = node_position - half_size;
             let max = node_position + half_size;
             (min.x..max.x).contains(&cursor.x) && (min.y..max.y).contains(&cursor.y)
         });
+
+        capture.0 = !dragging.is_empty() || on_shop;
     }
 
     fn make_purchase(
@@ -328,25 +345,107 @@ impl ShopPlugin {
         }
     }
 
-    fn adjust_tile_direction(
-        parameters: Query<(&Position, Option<&Direction>, Option<&Rotation>)>,
-        tilemaps: Query<&TilemapEntities>,
-        tiles: Query<&CursorDirection, With<Tile>>,
-        purchase_tile: Res<PurchaseOnTile>,
+    fn spawn_drag_markers(
+        mut commands: Commands,
+        purchases: Query<(Entity, &Children), With<JustPurchased>>,
+        tile_adjusters: Query<&TileAdjuster>,
+        mut meshes: ResMut<Assets<Mesh>>,
+        mut materials: ResMut<Assets<ColorMaterial>>,
     ) {
-        for tilemap in &tilemaps {
-            let Some((purchase_tile, _)) = tilemap
-                .iter()
-                .find(|(tile, entity)| **entity == **purchase_tile)
-            else {
-                panic!("Unable to locate the purchase tile for latest purchase")
+        for (entity, _) in purchases
+            .iter()
+            .filter(|(_, children)| !children.iter().any(|child| tile_adjusters.contains(*child)))
+        {
+            info!("Spawning tile adjuster");
+            let marker = commands
+                .spawn((
+                    TileAdjuster,
+                    TileAdjuster::spawn(&mut meshes, &mut materials),
+                ))
+                .id();
+
+            commands.entity(entity).add_child(marker);
+        }
+    }
+
+    fn update_tile_parameters(
+        tile_adjusters: Query<(&Parent, &Transform), (Changed<Transform>, With<TileAdjuster>)>,
+        mut tiles: Query<(Option<&mut Direction>, Option<&mut Rotation>), With<Position>>,
+    ) {
+        for (parent, transform) in &tile_adjusters {
+            if let Ok((direction, rotation)) = tiles.get_mut(**parent) {
+                if let Some(mut direction) = direction {
+                    *direction = TileAdjuster::to_direction(transform.translation);
+                }
+
+                if let Some(mut rotation) = rotation {
+                    *rotation = TileAdjuster::to_rotation(transform.translation);
+                }
+            }
+        }
+    }
+
+    fn start_drag(
+        mut commands: Commands,
+        mouse_input: Res<ButtonInput<MouseButton>>,
+        cursor_position: Res<CursorWorldPosition>,
+        markers: Query<(Entity, &GlobalTransform), With<TileAdjuster>>,
+    ) {
+        if !mouse_input.just_pressed(MouseButton::Left) {
+            return;
+        }
+
+        if let Some((marker_entity, _)) = markers
+            .iter()
+            .filter(|(_, transform)| {
+                transform.translation().xy().distance(**cursor_position) <= TileAdjuster::RADIUS
+            })
+            .next()
+        {
+            info!("Dragging inserted in marker at current cursor position");
+            commands.entity(marker_entity).insert(Dragging);
+        }
+    }
+
+    fn handle_drag(
+        mut markers: Query<(&Parent, &mut Transform), (With<TileAdjuster>, With<Dragging>)>,
+        game_tiles: Query<(Entity, &Position)>,
+        tiles: Query<(&Tile, &CursorDirection)>,
+    ) {
+        let Ok((parent, mut transform)) = markers.get_single_mut() else {
+            return;
+        };
+
+        let Ok((_, position)) = game_tiles.get(**parent) else {
+            info!("No existing game tiles are the parent to the dragged marker");
+            return;
+        };
+
+        if let Some((_, cursor_direction)) = tiles.iter().find(|(&tile, _)| *tile == **position) {
+            let cursor_direction: Direction = (**cursor_direction).into();
+            let angle = match cursor_direction {
+                Direction::North => 0.,
+                Direction::Northwest => PI / 3.,
+                Direction::Southwest => 2. * PI / 3.,
+                Direction::South => PI,
+                Direction::Southeast => 4. * PI / 3.,
+                Direction::Northeast => 5. * PI / 3.,
             };
-            let Some((position, _, _)) = parameters
-                .iter()
-                .find(|(position, _, _)| ***position == *purchase_tile)
-            else {
-                panic!("No existing tile matches the purchase tile position")
-            };
+
+            let rotation = Quat::from_rotation_z(angle);
+            transform.translation = rotation.mul_vec3(TileAdjuster::OFFSET);
+        }
+    }
+
+    fn stop_drag(
+        mut commands: Commands,
+        mouse_input: Res<ButtonInput<MouseButton>>,
+        markers: Query<Entity, (With<TileAdjuster>, With<Dragging>)>,
+    ) {
+        if mouse_input.just_released(MouseButton::Left) {
+            for marker in &markers {
+                commands.entity(marker).remove::<Dragging>();
+            }
         }
     }
 }
@@ -406,3 +505,68 @@ pub struct ControllingPlayer(Entity);
 #[derive(Clone, Debug)]
 #[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct PurchaseOnTile(Entity);
+
+#[derive(Clone, Debug)]
+#[derive(Component)]
+pub struct JustPurchased;
+
+#[derive(Clone, Debug)]
+#[derive(Component)]
+pub struct TileAdjuster;
+
+impl TileAdjuster {
+    pub const OFFSET: Vec3 = Vec3::new(0., 70., 0.);
+    pub const RADIUS: f32 = 10.;
+
+    pub fn spawn(
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<ColorMaterial>>,
+    ) -> MaterialMesh2dBundle<ColorMaterial> {
+        MaterialMesh2dBundle {
+            mesh: Mesh2dHandle(meshes.add(Circle {
+                radius: Self::RADIUS,
+            })),
+            material: materials.add(Color::BLACK),
+            transform: Transform::from_translation(Self::OFFSET),
+            ..default()
+        }
+    }
+
+    pub fn to_direction(position: Vec3) -> Direction {
+        match position.angle_between(Vec3::X) {
+            theta if theta < PI / 3. && theta >= 0. && position.y >= 0. => Direction::Northeast,
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y >= 0. => {
+                Direction::North
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y >= 0. => {
+                Direction::Northwest
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y < 0. => {
+                Direction::Southwest
+            }
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y < 0. => {
+                Direction::South
+            }
+            _ => Direction::Southeast,
+        }
+    }
+
+    pub fn to_rotation(position: Vec3) -> Rotation {
+        match position.angle_between(Vec3::X) {
+            theta if theta < PI / 3. && theta >= 0. && position.y >= 0. => Rotation::new(1),
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y >= 0. => {
+                Rotation::new(2)
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y >= 0. => Rotation::new(3),
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y < 0. => Rotation::new(4),
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y < 0. => {
+                Rotation::new(5)
+            }
+            _ => Rotation::new(6),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+#[derive(Component)]
+pub struct Dragging;

@@ -10,6 +10,7 @@ use bevy::{
 use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
     lasers::{Consumption, Direction, Laser, Position, Shooter},
@@ -138,6 +139,7 @@ impl Command for LaserTowerSpawn {
                     // Copied solution in all other markers like this one
                     Transform::from_translation(translation),
                     GlobalTransform::from_translation(translation),
+                    JustPurchased,
                 ))
                 .with_children(|builder| {
                     builder.spawn((
