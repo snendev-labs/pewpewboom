@@ -286,6 +286,7 @@ impl ShopPlugin {
         mut capture: ResMut<CursorCapture>,
         windows: Query<&Window, With<PrimaryWindow>>,
         nodes: Query<(&Node, &GlobalTransform)>,
+        dragging: Query<&Dragging>,
     ) {
         let Ok(window) = windows.get_single() else {
             return;
@@ -295,13 +296,15 @@ impl ShopPlugin {
             return;
         };
 
-        capture.0 = nodes.iter().any(|(node, transform)| {
+        let on_shop = nodes.iter().any(|(node, transform)| {
             let node_position = transform.translation().xy();
             let half_size = 0.5 * node.size();
             let min = node_position - half_size;
             let max = node_position + half_size;
             (min.x..max.x).contains(&cursor.x) && (min.y..max.y).contains(&cursor.y)
         });
+
+        capture.0 = !dragging.is_empty() || on_shop;
     }
 
     fn make_purchase(
