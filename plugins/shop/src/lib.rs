@@ -20,7 +20,7 @@ use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
 use tilemap::{
     CursorDirection, CursorWorldPosition, EmptyTile, EmptyTileMaterial, TargetedTile, Tile,
 };
-use tiles::lasers::{Direction, Position};
+use tiles::lasers::{Direction, Position, Rotation};
 
 pub struct ShopPlugin;
 
@@ -49,6 +49,7 @@ impl Plugin for ShopPlugin {
                 ),
                 Self::clear_shop,
                 Self::spawn_drag_markers,
+                Self::update_tile_parameters,
                 Self::start_drag.run_if(resource_exists::<CursorWorldPosition>),
                 Self::handle_drag,
                 Self::stop_drag,
@@ -364,6 +365,23 @@ impl ShopPlugin {
         }
     }
 
+    fn update_tile_parameters(
+        tile_adjusters: Query<(&Parent, &Transform), (Changed<Transform>, With<TileAdjuster>)>,
+        mut tiles: Query<(Option<&mut Direction>, Option<&mut Rotation>), With<Position>>,
+    ) {
+        for (parent, transform) in &tile_adjusters {
+            if let Ok((direction, rotation)) = tiles.get_mut(**parent) {
+                if let Some(mut direction) = direction {
+                    *direction = TileAdjuster::to_direction(transform.translation);
+                }
+
+                if let Some(mut rotation) = rotation {
+                    *rotation = TileAdjuster::to_rotation(transform.translation);
+                }
+            }
+        }
+    }
+
     fn start_drag(
         mut commands: Commands,
         mouse_input: Res<ButtonInput<MouseButton>>,
@@ -402,7 +420,6 @@ impl ShopPlugin {
 
         if let Some((_, cursor_direction)) = tiles.iter().find(|(&tile, _)| *tile == **position) {
             let cursor_direction: Direction = (**cursor_direction).into();
-            info!("Current cursor direction {:?}", cursor_direction);
             let angle = match cursor_direction {
                 Direction::North => 0.,
                 Direction::Northwest => PI / 3.,
@@ -414,7 +431,6 @@ impl ShopPlugin {
 
             let rotation = Quat::from_rotation_z(angle);
             transform.translation = rotation.mul_vec3(TileAdjuster::OFFSET);
-            info!("Transform is now {:?}", transform);
         }
     }
 
@@ -510,6 +526,40 @@ impl TileAdjuster {
             material: materials.add(Color::BLACK),
             transform: Transform::from_translation(Self::OFFSET),
             ..default()
+        }
+    }
+
+    pub fn to_direction(position: Vec3) -> Direction {
+        match position.angle_between(Vec3::X) {
+            theta if theta < PI / 3. && theta >= 0. && position.y >= 0. => Direction::Northeast,
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y >= 0. => {
+                Direction::North
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y >= 0. => {
+                Direction::Northwest
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y < 0. => {
+                Direction::Southwest
+            }
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y < 0. => {
+                Direction::South
+            }
+            _ => Direction::Southeast,
+        }
+    }
+
+    pub fn to_rotation(position: Vec3) -> Rotation {
+        match position.angle_between(Vec3::X) {
+            theta if theta < PI / 3. && theta >= 0. && position.y >= 0. => Rotation::new(1),
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y >= 0. => {
+                Rotation::new(2)
+            }
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y >= 0. => Rotation::new(3),
+            theta if theta >= 2. * PI / 3. && theta <= PI && position.y < 0. => Rotation::new(4),
+            theta if theta >= PI / 3. && theta < 2. * PI / 3. && position.y < 0. => {
+                Rotation::new(5)
+            }
+            _ => Rotation::new(6),
         }
     }
 }

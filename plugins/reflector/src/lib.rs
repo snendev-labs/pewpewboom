@@ -36,10 +36,10 @@ impl ReflectorPlugin {
                 *transform = match *direction {
                     Direction::North | Direction::South => Transform::IDENTITY,
                     Direction::Northeast | Direction::Southwest => {
-                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
+                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
                     }
                     Direction::Northwest | Direction::Southeast => {
-                        Transform::from_rotation(Quat::from_rotation_z(-PI / 3.))
+                        Transform::from_rotation(Quat::from_rotation_z(PI / 3.))
                     }
                 }
             }
