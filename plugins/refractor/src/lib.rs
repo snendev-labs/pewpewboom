@@ -61,7 +61,7 @@ impl RefractorPlugin {
 pub struct RefractorTile;
 
 impl Tile for RefractorTile {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         RefractorSpawn { position, player }
     }
 

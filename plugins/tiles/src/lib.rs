@@ -18,7 +18,8 @@ use lasers::{
 use tilemap::{EmptyTile, EmptyTileMaterial, Tilemap, TilemapEntities};
 
 pub trait Tile {
-    fn spawn(position: Position, player: Entity) -> impl Command;
+    #[allow(unused_variables)]
+    fn spawn(position: Position, player: Entity, game: Entity) -> impl Command;
 
     fn material(asset_server: &AssetServer) -> ColorMaterial;
 
@@ -169,11 +170,15 @@ where
             })
             .collect::<Vec<_>>();
 
-        for tilemap_entities in tilemaps.iter() {
+        for tilemap_entities in &tilemaps {
             for tile_spawn in &tile_spawns {
-                for (hex, tile_entity) in tilemap_entities.iter() {
+                for (hex, tile_entity) in &tilemap_entities {
                     if *tile_entity == tile_spawn.on_tile {
-                        commands.add(T::spawn(Position::from(*hex), tile_spawn.player));
+                        commands.add(T::spawn(
+                            Position::from(*hex),
+                            tile_spawn.player,
+                            tile_spawn.game,
+                        ));
 
                         commands.entity(*tile_entity).remove::<EmptyTile>();
                     }
@@ -241,6 +246,7 @@ pub struct TileSpawnEvent {
     pub tile_id: TypeId,
     pub on_tile: Entity,
     pub player: Entity,
+    game: Entity,
 }
 
 #[derive(Clone, Debug)]

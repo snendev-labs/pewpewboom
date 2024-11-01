@@ -57,7 +57,7 @@ impl LaserPlugin {
             return;
         };
 
-        'lasers: for (laser_position, laser_direction, laser_shooter) in &lasers {
+        for (laser_position, laser_direction, laser_shooter) in &lasers {
             const LASER_RANGE: usize = 100;
             const BASE_LASER_STRENGTH: usize = 1;
 
@@ -126,7 +126,7 @@ impl LaserPlugin {
                             shooter: **laser_shooter,
                         });
                         laser_path_events.send(LaserPathEvent { path });
-                        break 'lasers; // This is breaking the wrong loop and ending the laser path tracing prematurely missing out on other paths - needs fix
+                        break;
                     }
                 }
                 current_position = next_position;

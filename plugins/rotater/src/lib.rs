@@ -74,7 +74,7 @@ impl RotaterPlugin {
 pub struct RotaterTile;
 
 impl Tile for RotaterTile {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         RotaterSpawn { position, player }
     }
 

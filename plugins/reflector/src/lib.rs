@@ -52,7 +52,7 @@ impl ReflectorPlugin {
 pub struct ReflectorTile;
 
 impl Tile for ReflectorTile {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         ReflectorSpawn { position, player }
     }
 

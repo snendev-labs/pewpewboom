@@ -21,7 +21,7 @@ impl Plugin for AmplifierPlugin {
 pub struct AmplifierTile;
 
 impl Tile for AmplifierTile {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         AmplifierSpawn { position, player }
     }
 
