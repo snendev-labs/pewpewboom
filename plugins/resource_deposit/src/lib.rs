@@ -2,6 +2,7 @@ use std::cmp::min;
 
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use merchandise::Money;
 use tiles::{
@@ -22,8 +23,8 @@ impl Plugin for ResourceDepositPlugin {
 pub struct ResourceDepositTile;
 
 impl Tile for ResourceDepositTile {
-    fn spawn(position: Position, _player: Entity) -> impl Command {
-        ResourceDepositSpawn { position }
+    fn spawn(position: Position, _player: Entity, game: Entity) -> impl Command {
+        ResourceDepositSpawn { position, game }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -53,11 +54,12 @@ impl Tile for ResourceDepositTile {
 
 pub struct ResourceDepositSpawn {
     position: Position,
+    game: Entity,
 }
 
 impl Command for ResourceDepositSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((ResourceDepositTile, self.position)); // Needs the InGame added here too
+        world.spawn((ResourceDepositTile, self.position, InGame(self.game))); // Needs the InGame added here too
     }
 }
 

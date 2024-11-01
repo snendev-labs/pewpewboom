@@ -60,7 +60,7 @@ impl LaserTowerPlugin {
 pub struct LaserTower;
 
 impl Tile for LaserTower {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         LaserTowerSpawn { position, player }
     }
 

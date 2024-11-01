@@ -18,8 +18,8 @@ impl Plugin for MountainPlugin {
 pub struct MountainTile;
 
 impl Tile for MountainTile {
-    fn spawn(position: Position, _player: Entity) -> impl Command {
-        MountainSpawn { position }
+    fn spawn(position: Position, _player: Entity, game: Entity) -> impl Command {
+        MountainSpawn { position, game }
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
@@ -48,12 +48,12 @@ impl Tile for MountainTile {
 
 pub struct MountainSpawn {
     position: Position,
+    game: Entity,
 }
 
 impl Command for MountainSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((MountainTile, self.position));
-        // Needs the InGame added here too
+        world.spawn((MountainTile, self.position, InGame(self.game)));
     }
 }
 

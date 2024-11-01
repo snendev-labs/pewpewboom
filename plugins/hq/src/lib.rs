@@ -19,7 +19,7 @@ impl Plugin for HQPlugin {
 pub struct HQTile;
 
 impl Tile for HQTile {
-    fn spawn(position: Position, player: Entity) -> impl Command {
+    fn spawn(position: Position, player: Entity, _game: Entity) -> impl Command {
         HQSpawn {
             position: position,
             player: player,
