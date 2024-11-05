@@ -1,5 +1,6 @@
 use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
+use game_loop::InGame;
 use health::Health;
 use tiles::{
     lasers::{Consumption, Direction, Position},
@@ -53,7 +54,7 @@ pub struct MountainSpawn {
 
 impl Command for MountainSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((MountainTile, self.position, InGame(self.game)));
+        world.spawn((MountainTile, self.position, InGame::new(self.game)));
     }
 }
 

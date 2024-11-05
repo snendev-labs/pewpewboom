@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use entropy::{EntropyBundle, GlobalEntropy};
 
 pub struct GameLoopPlugin;
 
@@ -10,6 +11,7 @@ impl Plugin for GameLoopPlugin {
                 Update,
                 (
                     Self::spawn_players,
+                    Self::spawn_entropy.run_if(resource_exists::<GlobalEntropy>),
                     Self::complete_choose_phase,
                     Self::complete_action_phase,
                     Self::complete_drawing_phase,
@@ -39,6 +41,19 @@ impl GameLoopPlugin {
                 .collect();
 
             commands.entity(new_game).insert(GamePlayers(players));
+        }
+    }
+
+    fn spawn_entropy(
+        mut commands: Commands,
+        games: Query<Entity, (With<GameInstance>, Without<EntropyBundle>)>,
+        mut global_entropy: ResMut<GlobalEntropy>,
+    ) {
+        for game in &games {
+            info!("Adding in entropy component to game");
+            commands
+                .entity(game)
+                .insert(EntropyBundle::new(&mut global_entropy));
         }
     }
 
@@ -113,6 +128,16 @@ pub enum GamePhase {
     Draw,
 }
 
+#[derive(Clone, Copy, Debug)]
+#[derive(Component, Deref)]
+pub struct GameRadius(u32);
+
+impl Default for GameRadius {
+    fn default() -> GameRadius {
+        Self(10)
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 #[derive(Component, Deref, Reflect)]
 pub struct GamePlayers(Vec<Entity>);
@@ -136,6 +161,7 @@ impl InGame {
 pub struct GameInstanceBundle {
     instance: GameInstance,
     phase: GamePhase,
+    radius: GameRadius,
 }
 
 #[derive(Debug)]

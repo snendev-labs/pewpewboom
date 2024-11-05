@@ -27,8 +27,9 @@ pub type GlobalEntropy = bevy_rand::prelude::GlobalEntropy<WyRand>;
 #[derive(Clone, Debug, Default)]
 #[derive(Component)]
 pub struct EntropyBundle {
-    entropy: Entropy,
+    pub entropy: Entropy,
 }
+// Should this be component or bundle with entropy component....
 
 impl EntropyBundle {
     pub fn new(global: &mut GlobalEntropy) -> Self {

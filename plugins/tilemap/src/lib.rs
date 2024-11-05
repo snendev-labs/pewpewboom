@@ -292,7 +292,7 @@ pub struct TilemapCursor(Entity);
 #[derive(Clone, Debug)]
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct TilemapEntities {
-    tiles: HashMap<Hex, Entity>,
+    pub tiles: HashMap<Hex, Entity>,
 }
 
 #[derive(Clone, Copy, Debug)]

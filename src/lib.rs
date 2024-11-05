@@ -8,6 +8,7 @@ pub use health;
 pub use hq;
 pub use laser_tower;
 pub use laser_visuals;
+pub use map_generator;
 pub use merchandise;
 pub use refractor;
 pub use tilemap;
@@ -21,7 +22,10 @@ impl PluginGroup for PewPewBoomPlugins {
             .add(entropy::EntropyPlugin::default())
             .add(game_loop::GameLoopPlugin)
             .add(tiles::TilesPlugin)
+            .add(map_generator::MapGeneratorPlugin)
             .add(merchandise::MerchPlugin)
+            .add(mountain::MountainPlugin)
+            .add(resource_deposit::ResourceDepositPlugin)
             .add(health::HealthPlugin)
             .add(tilemap::TilemapPlugin)
             .add(camera::CameraPlugin)

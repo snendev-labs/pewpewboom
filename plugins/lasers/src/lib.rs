@@ -125,7 +125,7 @@ impl LaserPlugin {
                             strength,
                             shooter: **laser_shooter,
                         });
-                        laser_path_events.send(LaserPathEvent { path });
+                        laser_path_events.send(LaserPathEvent { path: path.clone() });
                         break;
                     }
                 }

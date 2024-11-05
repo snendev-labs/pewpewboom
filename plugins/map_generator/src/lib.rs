@@ -1,53 +1,70 @@
-use std::{collections::HashSet, ops::RangeInclusive};
+use std::{any::TypeId, collections::HashSet, ops::RangeInclusive};
 
 use bevy::prelude::*;
-use game_loop::SpawnGame;
+use game_loop::{GameInstance, GameRadius};
 use itertools::Itertools;
 
-use entropy::EntropyBundle;
+use entropy::{Entropy, EntropyBundle};
 use mountain::MountainTile;
+use rand::Rng;
+use resource_deposit::ResourceDepositTile;
 use tilemap::Tile;
+use tiles::TileSpawnEvent;
 
 pub struct MapGeneratorPlugin;
 
 impl Plugin for MapGeneratorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (Self::spawn_mountains).in_set(MapGeneratorSystems));
-
-        app.observe(Self::observer);
+        app.add_systems(
+            Update,
+            (Self::spawn_obstacles, Self::spawn_mountains).in_set(MapGeneratorSystems),
+        );
     }
 }
 
 impl MapGeneratorPlugin {
     fn spawn_mountains(
-        mut commands: Commands,
         tiles: Query<(Entity, &Tile)>,
-        obstacles: Query<&ObstacleMap>,
+        mut obstacles: Query<(Entity, &ObstacleMap, &mut EntropyBundle), Added<ObstacleMap>>,
+        mut tile_spawns: EventWriter<TileSpawnEvent>,
     ) {
-        let obstacle_map = obstacles.single();
-        for (entity, tile) in &tiles {
-            if obstacle_map.contains(tile) {
-                commands.entity(entity).insert(MountainTile);
+        for (game, obstacle_map, mut entropy) in &mut obstacles {
+            info!("Found spawned obstacle map {:?}", obstacle_map);
+            for (tile_entity, tile) in &tiles {
+                let sample: f32 = entropy.entropy.gen_range(0.0..=1.0);
+                if obstacle_map.contains(tile) {
+                    tile_spawns.send(TileSpawnEvent {
+                        tile_id: if sample > 0.25 {
+                            TypeId::of::<MountainTile>()
+                        } else {
+                            TypeId::of::<ResourceDepositTile>()
+                        },
+                        on_tile: tile_entity,
+                        owner: game,
+                        game: game,
+                    });
+                }
             }
         }
     }
 
-    fn observer(
-        trigger: Trigger<SpawnGame>,
+    fn spawn_obstacles(
+        games: Query<(Entity, &GameRadius), (With<GameInstance>, Without<ObstacleMap>)>,
         mut commands: Commands,
         mut entropy: Query<&mut EntropyBundle>,
     ) {
-        let game_instance = trigger.event().instance;
-        let map_radius = trigger.event().radius as i32;
-
-        if let Ok(mut entropy) = entropy.get_mut(game_instance) {
-            commands.entity(game_instance).insert(ObstacleMap::generate(
-                -map_radius..=map_radius,
-                -map_radius..=map_radius,
-                5,
-                5,
-                &mut entropy,
-            ));
+        for (game, radius) in &games {
+            let map_radius = **radius as i32;
+            if let Ok(mut entropy) = entropy.get_mut(game) {
+                info!("Adding in obstacle map for game");
+                commands.entity(game).insert(ObstacleMap::generate(
+                    -map_radius..=map_radius,
+                    -map_radius..=map_radius,
+                    3,
+                    3,
+                    &mut entropy,
+                ));
+            }
         }
     }
 }
@@ -88,7 +105,7 @@ impl ObstacleMap {
         let vertical = vertical
             .chunks_exact(2)
             .filter_map(|chunk| {
-                if (chunk[0] != chunk[1]) {
+                if chunk[0] != chunk[1] {
                     Some([chunk[0], chunk[1]])
                 } else {
                     None
