@@ -60,9 +60,12 @@ health = { workspace = true }
 hq = { workspace = true }
 laser_tower = { workspace = true }
 laser_visuals = { workspace = true }
+map_generator = { workspace = true }
 merchandise = { workspace = true }
+mountain = { workspace = true }
 reflector = { workspace = true }
 refractor = { workspace = true }
+resource_deposit = { workspace = true }
 rotater = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }

@@ -8,10 +8,12 @@ bevy = { workspace = true }
 entropy = { workspace = true }
 game_loop = { workspace = true }
 mountain = { workspace = true }
+resource_deposit = { workspace = true }
 tiles = { workspace = true }
 tilemap = { workspace = true }
 
 #stdx
 itertools = "0.13"
+noise = "0.9"
 rand = "0.8"
 

@@ -59,7 +59,7 @@ pub struct ResourceDepositSpawn {
 
 impl Command for ResourceDepositSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((ResourceDepositTile, self.position, InGame(self.game))); // Needs the InGame added here too
+        world.spawn((ResourceDepositTile, self.position, InGame::new(self.game)));
     }
 }
 

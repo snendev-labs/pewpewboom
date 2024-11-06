@@ -4,7 +4,7 @@ use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 
 use bevy_anyhow_alert::*;
 
-use game_loop::Player;
+use game_loop::{GameInstance, GamePlayers, Player};
 use tiles::TileSpawnEvent;
 
 mod components;
@@ -45,6 +45,7 @@ impl MerchPlugin {
         mut tile_spawns: EventWriter<TileSpawnEvent>,
         registry: Res<MerchRegistry>,
         mut shoppers: Query<&mut Money, With<Shopper>>,
+        games: Query<(Entity, &GamePlayers), With<GameInstance>>,
     ) -> ResultVec<(), PurchaseError> {
         let mut errors = vec![];
         for Purchase {
@@ -57,6 +58,15 @@ impl MerchPlugin {
             let Ok(mut money) = shoppers.get_mut(*buyer) else {
                 continue;
             };
+
+            let Some((game, _)) = games
+                .iter()
+                .filter(|(_, players)| players.contains(buyer))
+                .next()
+            else {
+                continue;
+            };
+
             info!("Player money recognized");
             let cost = merch.price();
             if **money >= *cost {
@@ -69,7 +79,8 @@ impl MerchPlugin {
                     tile_spawns.send(TileSpawnEvent {
                         tile_id: *tile_id,
                         on_tile: *on_tile,
-                        player: *buyer,
+                        owner: *buyer,
+                        game,
                     });
                 } else {
                     info!("Unknown merch error");

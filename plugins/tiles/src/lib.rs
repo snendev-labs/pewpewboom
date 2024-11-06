@@ -4,9 +4,9 @@ use bevy::{
     color::{Color, Mix},
     ecs::world::Command,
     prelude::{
-        info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Entity,
-        Event, EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Or, Plugin, Query,
-        Res, ResMut, SystemSet, Update, With, World,
+        info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Deref,
+        Entity, Event, EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Or, Plugin,
+        Query, Res, ResMut, SystemSet, Update, With, World,
     },
 };
 
@@ -172,11 +172,11 @@ where
 
         for tilemap_entities in &tilemaps {
             for tile_spawn in &tile_spawns {
-                for (hex, tile_entity) in &tilemap_entities {
+                for (hex, tile_entity) in &tilemap_entities.tiles {
                     if *tile_entity == tile_spawn.on_tile {
                         commands.add(T::spawn(
                             Position::from(*hex),
-                            tile_spawn.player,
+                            tile_spawn.owner,
                             tile_spawn.game,
                         ));
 
@@ -204,24 +204,22 @@ where
         };
 
         for (position, owner, tile, empty) in &added_tiles {
-            info!("Tile added (or  removed)");
             let hex = **position;
             if let Some(mut material) = tiles
                 .get(&hex)
                 .and_then(|&entity| materials.get_mut(entity).ok())
             {
-                info!("Material is recognized");
-                if let (Some(owner), Some(_)) = (owner, tile) {
-                    if let Ok(darkening_factor) = players.get((*owner).0) {
-                        *material = material_assets.add(
-                            T::material(&asset_server)
-                                .color
-                                .mix(&Color::BLACK, **darkening_factor),
-                        );
-                    } else {
-                        *material = material_assets.add(T::material(&asset_server).color);
-                        info!("Player color query failed, material changed without darkening")
-                    }
+                let darkening = match owner.and_then(|owner| players.get(**owner).ok()) {
+                    Some(value) => value,
+                    None => &PlayerColorAdjuster(0.),
+                };
+
+                if let Some(_) = tile {
+                    *material = material_assets.add(
+                        T::material(&asset_server)
+                            .color
+                            .mix(&Color::BLACK, **darkening),
+                    );
                 }
 
                 if let Some(_) = empty {
@@ -245,21 +243,17 @@ pub enum TileSystems {
 pub struct TileSpawnEvent {
     pub tile_id: TypeId,
     pub on_tile: Entity,
-    pub player: Entity,
-    game: Entity,
+    pub owner: Entity,
+    pub game: Entity,
 }
 
 #[derive(Clone, Debug)]
-#[derive(Component)]
+#[derive(Component, Deref)]
 pub struct Owner(Entity);
 
 impl Owner {
     pub fn new(entity: Entity) -> Owner {
         Self(entity)
-    }
-
-    pub fn inner(&self) -> Entity {
-        self.0
     }
 }
 
