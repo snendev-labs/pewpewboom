@@ -1,15 +1,17 @@
 use std::{any::TypeId, collections::HashSet, ops::RangeInclusive};
 
 use bevy::prelude::*;
-use game_loop::{GameInstance, GameRadius};
-use itertools::Itertools;
+use noise::{utils::*, Fbm, Perlin};
 
-use entropy::{Entropy, EntropyBundle};
+use entropy::EntropyBundle;
+use game_loop::{GameInstance, GameRadius};
 use mountain::MountainTile;
 use rand::Rng;
 use resource_deposit::ResourceDepositTile;
 use tilemap::Tile;
 use tiles::TileSpawnEvent;
+
+mod test;
 
 pub struct MapGeneratorPlugin;
 
@@ -85,44 +87,58 @@ impl ObstacleMap {
         vertical_samples: u32, // Should be less than the length of the respective sampling interval
         entropy: &mut EntropyBundle,
     ) -> Self {
-        let mut horizontal = entropy.sample_from_range(horizontal_range, horizontal_samples);
-        horizontal.sort();
+        let fbm = Fbm::<Perlin>::new(0);
 
-        let horizontal = horizontal
-            .chunks_exact(2)
-            .filter_map(|chunk| {
-                if chunk[0] != chunk[1] {
-                    Some([chunk[0], chunk[1]])
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        let mut vertical = entropy.sample_from_range(vertical_range, vertical_samples);
-        vertical.sort();
-
-        let vertical = vertical
-            .chunks_exact(2)
-            .filter_map(|chunk| {
-                if chunk[0] != chunk[1] {
-                    Some([chunk[0], chunk[1]])
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
+        let plane = PlaneMapBuilder::new(fbm)
+            .set_size(1000, 1000)
+            .set_x_bounds(-5.0, 5.0)
+            .set_y_bounds(-5.0, 5.0)
+            .build();
 
         let mut hit_tiles: HashSet<Tile> = HashSet::new();
 
-        for x_interval in horizontal {
-            for y_interval in &vertical {
-                let product = (x_interval[0]..=x_interval[1])
-                    .cartesian_product(y_interval[0]..=y_interval[1])
-                    .map(|(x, y)| Tile::new(x, y));
-                hit_tiles.extend(product)
-            }
+        for x in horizontal_range {
+            for y in vertical_range.clone() {}
         }
+
+        // let mut horizontal = entropy.sample_from_range(horizontal_range, horizontal_samples);
+        // horizontal.sort();
+
+        // let horizontal = horizontal
+        //     .chunks_exact(2)
+        //     .filter_map(|chunk| {
+        //         if chunk[0] != chunk[1] {
+        //             Some([chunk[0], chunk[1]])
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // let mut vertical = entropy.sample_from_range(vertical_range, vertical_samples);
+        // vertical.sort();
+
+        // let vertical = vertical
+        //     .chunks_exact(2)
+        //     .filter_map(|chunk| {
+        //         if chunk[0] != chunk[1] {
+        //             Some([chunk[0], chunk[1]])
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // let mut hit_tiles: HashSet<Tile> = HashSet::new();
+
+        // for x_interval in horizontal {
+        //     for y_interval in &vertical {
+        //         let product = (x_interval[0]..=x_interval[1])
+        //             .cartesian_product(y_interval[0]..=y_interval[1])
+        //             .map(|(x, y)| Tile::new(x, y));
+        //         hit_tiles.extend(product)
+        //     }
+        // }
 
         ObstacleMap(hit_tiles)
     }
@@ -130,8 +146,6 @@ impl ObstacleMap {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use bevy::prelude::App;
 
     use entropy::{EntropyBundle, EntropyPlugin, GlobalEntropy};

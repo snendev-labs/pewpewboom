@@ -14,5 +14,6 @@ tilemap = { workspace = true }
 
 #stdx
 itertools = "0.13"
+noise = "0.9"
 rand = "0.8"
 
