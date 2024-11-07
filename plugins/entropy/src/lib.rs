@@ -21,6 +21,12 @@ impl Plugin for EntropyPlugin {
     }
 }
 
+impl EntropyPlugin {
+    pub fn new(seed: [u8; 8]) -> EntropyPlugin {
+        Self { seed }
+    }
+}
+
 pub type Entropy = EntropyComponent<WyRand>;
 pub type GlobalEntropy = bevy_rand::prelude::GlobalEntropy<WyRand>;
 

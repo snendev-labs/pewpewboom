@@ -1,17 +1,20 @@
 use std::{any::TypeId, collections::HashSet};
 
 use bevy::prelude::*;
+use hexx::Hex;
+use hq::HQTile;
 use noise::{utils::*, Fbm, Perlin};
 
 use entropy::EntropyBundle;
-use game_loop::{GameInstance, GameRadius};
+use game_loop::{GameInstance, GamePlayers, GameRadius};
 use mountain::MountainTile;
-use rand::Rng;
+use rand::{
+    seq::{index::sample, SliceRandom},
+    Rng,
+};
 use resource_deposit::ResourceDepositTile;
-use tilemap::Tile;
-use tiles::TileSpawnEvent;
-
-mod test;
+use tilemap::{Tile, TilemapEntities};
+use tiles::{lasers::Position, TileSpawnEvent};
 
 pub struct MapGeneratorPlugin;
 
@@ -19,22 +22,74 @@ impl Plugin for MapGeneratorPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (Self::spawn_obstacles, Self::spawn_mountains).in_set(MapGeneratorSystems),
+            (Self::spawn_hq, Self::spawn_obstacles, Self::spawn_mountains)
+                .chain()
+                .in_set(MapGeneratorSystems),
         );
     }
 }
 
 impl MapGeneratorPlugin {
+    fn spawn_hq(
+        mut games: Query<
+            (Entity, &GameRadius, &GamePlayers, &mut EntropyBundle),
+            Added<GamePlayers>,
+        >,
+        tiles: Query<&TilemapEntities>,
+        mut tile_spawns: EventWriter<TileSpawnEvent>,
+    ) {
+        let Ok(tilemap) = tiles.get_single() else {
+            info!("Multiple tilemaps found");
+            return;
+        };
+
+        for (game_entity, game_radius, players, mut entropy) in &mut games {
+            let mut candidate_spawns = (0..3)
+                .flat_map(|border_distance| {
+                    Hex::new(0, 0)
+                        .ring(**game_radius - border_distance)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+
+            for player in &(**players) {
+                let index = sample(&mut entropy.entropy, candidate_spawns.len(), 1);
+
+                let hex = candidate_spawns.remove(index.iter().next().unwrap());
+                let Some(tile) = tilemap.tiles.get(&hex) else {
+                    info!("Spawn point for player HQ not found in available tilemap hexes");
+                    return;
+                };
+                info!("Spawning hq for player {:?} on hex {:?}", player, hex);
+                tile_spawns.send(TileSpawnEvent {
+                    tile_id: TypeId::of::<HQTile>(),
+                    on_tile: *tile,
+                    owner: *player,
+                    game: game_entity,
+                });
+            }
+        }
+    }
+
     fn spawn_mountains(
         tiles: Query<(Entity, &Tile)>,
         mut obstacles: Query<(Entity, &ObstacleMap, &mut EntropyBundle), Added<ObstacleMap>>,
+        hqs: Query<&Position, With<HQTile>>,
         mut tile_spawns: EventWriter<TileSpawnEvent>,
     ) {
         for (game, obstacle_map, mut entropy) in &mut obstacles {
-            info!("Found spawned obstacle map {:?}", obstacle_map);
+            let hq_positions = hqs.iter().map(|position| **position).collect::<Vec<_>>();
             for (tile_entity, tile) in &tiles {
-                let sample: f32 = entropy.entropy.gen_range(0.0..=1.0);
                 if obstacle_map.contains(tile) {
+                    if hq_positions
+                        .iter()
+                        .any(|position| position.unsigned_distance_to(**tile) < 6)
+                    {
+                        continue;
+                    }
+
+                    let sample: f32 = entropy.entropy.gen_range(0.0..=1.0);
+
                     tile_spawns.send(TileSpawnEvent {
                         tile_id: if sample > 0.25 {
                             TypeId::of::<MountainTile>()

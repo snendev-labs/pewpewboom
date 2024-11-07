@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 bevy = { workspace = true }
 entropy = { workspace = true }
+hexx = { workspace = true }
+hq = { workspace = true }
 game_loop = { workspace = true }
 mountain = { workspace = true }
 resource_deposit = { workspace = true }

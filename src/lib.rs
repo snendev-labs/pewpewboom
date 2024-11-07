@@ -19,7 +19,7 @@ pub struct PewPewBoomPlugins;
 impl PluginGroup for PewPewBoomPlugins {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(entropy::EntropyPlugin::default())
+            .add(entropy::EntropyPlugin::new([0, 4, 55, 6, 7, 12, 55, 9]))
             .add(game_loop::GameLoopPlugin)
             .add(tiles::TilesPlugin)
             .add(map_generator::MapGeneratorPlugin)
