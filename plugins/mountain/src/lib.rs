@@ -24,7 +24,7 @@ impl Tile for MountainTile {
     }
 
     fn material(_asset_server: &AssetServer) -> ColorMaterial {
-        ColorMaterial::from_color(Color::Srgba(palettes::css::BEIGE))
+        ColorMaterial::from_color(Color::Srgba(palettes::css::BLACK))
     }
 
     fn activate(

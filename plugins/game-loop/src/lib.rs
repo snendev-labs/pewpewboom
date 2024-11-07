@@ -10,8 +10,11 @@ impl Plugin for GameLoopPlugin {
             .add_systems(
                 Update,
                 (
-                    Self::spawn_players,
-                    Self::spawn_entropy.run_if(resource_exists::<GlobalEntropy>),
+                    (
+                        Self::spawn_entropy.run_if(resource_exists::<GlobalEntropy>),
+                        Self::spawn_players,
+                    )
+                        .chain(),
                     Self::complete_choose_phase,
                     Self::complete_action_phase,
                     Self::complete_drawing_phase,

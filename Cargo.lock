@@ -2513,6 +2513,8 @@ dependencies = [
  "bevy",
  "entropy",
  "game_loop",
+ "hexx",
+ "hq",
  "itertools",
  "mountain",
  "noise",

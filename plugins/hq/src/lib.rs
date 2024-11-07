@@ -58,6 +58,7 @@ pub struct HQSpawn {
 impl Command for HQSpawn {
     fn apply(self, world: &mut World) {
         if let Some(game) = world.get::<InGame>(self.player) {
+            info!("Spawning hq tile for player {:?}", self.player);
             world.spawn((HQTile, self.position, Owner::new(self.player), game.clone()));
         }
     }
