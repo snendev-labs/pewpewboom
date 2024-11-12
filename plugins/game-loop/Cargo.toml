@@ -8,4 +8,5 @@ edition = "2021"
 entropy = { workspace = true }
 # bevy
 bevy = { workspace = true }
+hexx = { workspace = true }
 # stdx

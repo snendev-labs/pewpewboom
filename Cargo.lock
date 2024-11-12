@@ -1910,6 +1910,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "entropy",
+ "hexx",
 ]
 
 [[package]]
@@ -3802,6 +3803,7 @@ name = "tilemap"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_loop",
  "hexx",
 ]
 

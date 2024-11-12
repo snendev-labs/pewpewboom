@@ -1,5 +1,8 @@
+use std::cmp::max;
+
 use bevy::prelude::*;
 use entropy::{EntropyBundle, GlobalEntropy};
+use hexx::{shapes, Hex, HexLayout};
 
 pub struct GameLoopPlugin;
 
@@ -132,12 +135,54 @@ pub enum GamePhase {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[derive(Component, Deref)]
-pub struct GameRadius(u32);
+#[derive(Component)]
+pub struct MapSize {
+    pub half_width: usize,
+    pub half_height: usize,
+}
 
-impl Default for GameRadius {
-    fn default() -> GameRadius {
-        Self(10)
+impl MapSize {
+    pub fn to_world_size(&self, layout: &HexLayout) -> (f64, f64) {
+        let mut world_horizontal_bound = 0.;
+        let mut world_vertical_bound = 0.;
+        for coord in shapes::flat_rectangle([
+            -(self.half_width as i32),
+            self.half_width as i32,
+            -(self.half_height as i32),
+            self.half_height as i32,
+        ]) {
+            let position = layout.hex_to_world_pos(coord);
+
+            world_horizontal_bound = f64::max(world_horizontal_bound, position.x as f64);
+            world_vertical_bound = f64::max(world_vertical_bound, position.y as f64);
+        }
+
+        (world_horizontal_bound, world_vertical_bound)
+    }
+
+    pub fn rectangle_index(&self, hex: &Hex) -> (usize, usize) {
+        let Hex { x, y } = hex;
+
+        let x_index = match usize::try_from(*x + self.half_width as i32) {
+            Ok(num) => num,
+            Err(_) => unreachable!("Should always produce a nonngeative, valid usize while traversing the rectangular map hexes"),
+        };
+        let x_offset = x >> 1;
+        let y_index = match usize::try_from(y + x_offset + self.half_height as i32) {
+            Ok(num) => num,
+            Err(_) => unreachable!("Should always produce a nonngeative, valid usize while traversing the rectangular map hexes"),
+        };
+
+        (x_index, y_index)
+    }
+}
+
+impl Default for MapSize {
+    fn default() -> MapSize {
+        Self {
+            half_width: 5,
+            half_height: 5,
+        }
     }
 }
 
@@ -164,7 +209,7 @@ impl InGame {
 pub struct GameInstanceBundle {
     instance: GameInstance,
     phase: GamePhase,
-    radius: GameRadius,
+    size: MapSize,
 }
 
 #[derive(Debug)]

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use game_loop::{ActionCompleteEvent, GamePhase};
 use hexx::*;
-use tilemap::TilemapEntities;
+use tilemap::{Tile, TilemapEntities};
 
 pub struct LaserPlugin;
 
@@ -178,8 +178,14 @@ impl Shooter {
 pub struct Position(Hex);
 
 impl From<Hex> for Position {
-    fn from(value: Hex) -> Self {
+    fn from(value: Hex) -> Position {
         Self(value)
+    }
+}
+
+impl From<Tile> for Position {
+    fn from(value: Tile) -> Position {
+        Self(*value)
     }
 }
 
