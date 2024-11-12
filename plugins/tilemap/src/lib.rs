@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use std::f32::consts::PI;
 
 use bevy::color::palettes;
+use bevy::log::info;
 use bevy::prelude::{
     resource_added, resource_exists_and_changed, resource_removed, App, Assets, BuildChildren,
     Bundle, Camera, Color, ColorMaterial, ColorMesh2dBundle, Commands, Component, Deref, DerefMut,
@@ -12,10 +14,10 @@ use bevy::render::{
     mesh::{Indices, PrimitiveTopology},
     render_asset::RenderAssetUsages,
 };
-use bevy::utils::HashMap;
+
 use bevy::window::PrimaryWindow;
 
-use hexx::{shapes, *};
+use hexx::*;
 
 pub struct TilemapPlugin;
 
@@ -25,7 +27,6 @@ impl Plugin for TilemapPlugin {
             .add_systems(
                 Update,
                 (
-                    Self::spawn_tilemaps,
                     Self::destroy_targeted_tile.run_if(resource_removed::<TargetedTile>()),
                     Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
                     Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
@@ -40,59 +41,7 @@ impl Plugin for TilemapPlugin {
 
 impl TilemapPlugin {
     /// World size of the hexagons (outer radius)
-    const HEX_SIZE: Vec2 = Vec2::splat(60.0);
-
-    fn spawn_tilemaps(
-        mut commands: Commands,
-        tilemaps: Query<Entity, (With<Tilemap>, Without<TilemapEntities>)>,
-        empty_tile_material: Res<EmptyTileMaterial>,
-        mut meshes: ResMut<Assets<Mesh>>,
-    ) {
-        for map_entity in &tilemaps {
-            let layout = HexLayout {
-                hex_size: TilemapPlugin::HEX_SIZE,
-                ..Default::default()
-            };
-            let tile_mesh = meshes.add(Tile::mesh(&layout));
-
-            let mut tiles = HashMap::default();
-            for coord in shapes::Hexagon::default().coords() {
-                let position = layout.hex_to_world_pos(coord);
-                let hex_entity = commands
-                    .spawn((
-                        TileBundle::new(
-                            Tile(coord),
-                            position,
-                            10.,
-                            tile_mesh.clone(),
-                            empty_tile_material.clone_weak(),
-                        ),
-                        EmptyTile,
-                    ))
-                    .with_children(|b| {
-                        b.spawn(Text2dBundle {
-                            text: Text::from_section(
-                                format!("{},{}", coord.x, coord.y),
-                                TextStyle {
-                                    font_size: 16.0,
-                                    color: Color::Srgba(palettes::css::LIGHT_SLATE_GRAY),
-                                    ..Default::default()
-                                },
-                            ),
-                            transform: Transform::from_xyz(10.0, 35.0, 10.0),
-                            ..Default::default()
-                        });
-                    })
-                    .set_parent(map_entity)
-                    .id();
-                tiles.insert(coord, hex_entity);
-            }
-            let tilemap_data = TilemapEntities { tiles };
-            commands
-                .entity(map_entity)
-                .insert((TilemapLayout(layout), tilemap_data));
-        }
-    }
+    pub const HEX_SIZE: Vec2 = Vec2::splat(60.0);
 
     fn handle_cursor_position(
         mut commands: Commands,
@@ -285,6 +234,12 @@ impl Tilemap {
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct TilemapLayout(HexLayout);
 
+impl TilemapLayout {
+    pub fn new(layout: HexLayout) -> TilemapLayout {
+        Self(layout)
+    }
+}
+
 #[derive(Clone, Debug)]
 #[derive(Component, Deref, DerefMut, Reflect)]
 pub struct TilemapCursor(Entity);
@@ -317,10 +272,11 @@ impl EmptyTileMaterial {
 pub struct Tile(Hex);
 
 impl Tile {
-    pub fn new(x: i32, y: i32) -> Self {
-        Tile(Hex { x, y })
+    pub fn new(x: i32, y: i32) -> Tile {
+        Self(Hex { x, y })
     }
-    fn mesh(hex_layout: &HexLayout) -> Mesh {
+
+    pub fn mesh(hex_layout: &HexLayout) -> Mesh {
         let mesh_info = PlaneMeshBuilder::new(hex_layout)
             .facing(Vec3::Z)
             .with_scale(Vec3::splat(0.98))
@@ -334,6 +290,12 @@ impl Tile {
         .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, mesh_info.normals)
         .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, mesh_info.uvs)
         .with_inserted_indices(Indices::U16(mesh_info.indices))
+    }
+}
+
+impl From<Hex> for Tile {
+    fn from(value: Hex) -> Tile {
+        Self(value)
     }
 }
 
@@ -368,13 +330,13 @@ impl CursorHex {
 }
 
 #[derive(Bundle)]
-struct TileBundle<T: Component> {
+pub struct TileBundle<T: Component> {
     tile: T,
     mesh: ColorMesh2dBundle,
 }
 
 impl<T: Component> TileBundle<T> {
-    fn new(
+    pub fn new(
         tile: T,
         position: Vec2,
         z: f32,
