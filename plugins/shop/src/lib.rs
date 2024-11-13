@@ -18,9 +18,13 @@ use sickle_ui::{
 use game_loop::{GamePhase, GamePlayers, Player, Ready};
 use merchandise::{Merch, MerchMaterials, MerchRegistry, Purchase};
 use tilemap::{
-    CursorDirection, CursorWorldPosition, EmptyTile, EmptyTileMaterial, TargetedTile, Tile,
+    CursorDirection, CursorWorldPosition, EmptyTile, EmptyTileMaterial, TargetedTile,
+    TerritoryTileMaterial, Tile,
 };
-use tiles::lasers::{Direction, Position, Rotation};
+use tiles::{
+    lasers::{Direction, Position, Rotation},
+    Territory,
+};
 
 pub struct ShopPlugin;
 
@@ -36,6 +40,11 @@ impl Plugin for ShopPlugin {
                 Self::handle_ready,
                 Self::handle_player_control,
                 Self::capture_cursor.run_if(resource_exists::<CursorCapture>),
+                Self::render_territories.run_if(
+                    resource_exists::<TerritoryTileMaterial>
+                        .and_then(resource_exists::<EmptyTileMaterial>)
+                        .and_then(resource_exists_and_changed::<ControllingPlayer>),
+                ),
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
                         .or_else(resource_removed::<SelectedMerch>())
@@ -223,6 +232,43 @@ impl ShopPlugin {
                 }
             }
         }
+    }
+
+    fn render_territories(
+        controlling_player: Option<Res<ControllingPlayer>>,
+        territories: Query<&Territory>,
+        mut tile_materials: Query<(Entity, &mut Handle<ColorMaterial>), With<EmptyTile>>,
+        territory_tile_material: Res<TerritoryTileMaterial>,
+        empty_tile_material: Res<EmptyTileMaterial>,
+        mut last_controlling_player: Local<Option<ControllingPlayer>>,
+    ) {
+        if let Some(territory) = controlling_player
+            .as_ref()
+            .and_then(|player| territories.get(***player).ok())
+        {
+            for (_, mut material) in tile_materials
+                .iter_mut()
+                .filter(|(tile, _)| territory.contains(tile))
+            {
+                *material = territory_tile_material.clone();
+            }
+        }
+
+        if controlling_player.as_deref().cloned() != *last_controlling_player {
+            if let Some(territory) = last_controlling_player
+                .as_ref()
+                .and_then(|player| territories.get(**player).ok())
+            {
+                for (_, mut material) in tile_materials
+                    .iter_mut()
+                    .filter(|(tile, _)| territory.contains(tile))
+                {
+                    *material = empty_tile_material.clone();
+                }
+            }
+        }
+
+        *last_controlling_player = controlling_player.as_deref().cloned();
     }
 
     fn update_tile_material(
@@ -497,7 +543,7 @@ pub struct CursorCapture(pub bool);
 #[derive(Component)]
 pub struct ShopPlayerSwitch;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[derive(Deref, DerefMut, Resource, Reflect)]
 pub struct ControllingPlayer(Entity);
 

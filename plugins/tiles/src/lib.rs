@@ -56,9 +56,10 @@ impl Plugin for TilesPlugin {
 
 impl TilesPlugin {
     fn update_territories(
+        mut commands: Commands,
         tilemaps: Query<&TilemapEntities>,
         tiles: Query<(&Position, &Owner)>,
-        mut territories: Query<(Entity, &mut Territory)>,
+        mut territories: Query<(Entity, Option<&mut Territory>)>,
     ) {
         let Ok(tilemap) = tilemaps.get_single() else {
             info!("Found none or multiple tilemaps");
@@ -66,7 +67,7 @@ impl TilesPlugin {
         };
         let mut sorted_tiles = tiles.iter().sort::<&Owner>().peekable();
 
-        for (player, mut territory) in &mut territories.iter_mut().sort::<Entity>() {
+        for (player, territory) in &mut territories.iter_mut().sort::<Entity>() {
             let mut updated_territory: HashSet<Entity> = HashSet::new();
 
             let Some((position, _)) = sorted_tiles.find(|(_, owner)| ***owner == player) else {
@@ -95,7 +96,11 @@ impl TilesPlugin {
                 }
             }
 
-            **territory = updated_territory;
+            if let Some(mut territory) = territory {
+                **territory = updated_territory;
+            } else {
+                commands.entity(player).insert(Territory(updated_territory));
+            }
         }
     }
 }
