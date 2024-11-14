@@ -10,7 +10,7 @@ use bevy::{
     },
 };
 
-use game_loop::{GameLoopSystems, GamePhase, InGame, PlayerColorAdjuster};
+use game_loop::{GameLoopSystems, GamePhase, InGame, Player, PlayerColorAdjuster};
 pub use lasers;
 use lasers::{
     Amplification, Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation,
@@ -59,7 +59,7 @@ impl TilesPlugin {
         mut commands: Commands,
         tilemaps: Query<&TilemapEntities>,
         tiles: Query<(&Position, &Owner)>,
-        mut territories: Query<(Entity, Option<&mut Territory>)>,
+        mut territories: Query<(Entity, Option<&mut Territory>), With<Player>>,
     ) {
         let Ok(tilemap) = tilemaps.get_single() else {
             info!("Found none or multiple tilemaps");
