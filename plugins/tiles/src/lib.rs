@@ -55,6 +55,10 @@ impl Plugin for TilesPlugin {
 }
 
 impl TilesPlugin {
+    // This could be better optimized in the future by only running conditional on a tile spawning or
+    // being destroyed under a player's control and using a `Changed` query filter to track that
+    // Owned tiles would need to be tracked by a marker component on the player entity or possibly
+    // as children under the entity to implement this
     fn update_territories(
         mut commands: Commands,
         tilemaps: Query<&TilemapEntities>,

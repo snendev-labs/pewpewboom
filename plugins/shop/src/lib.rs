@@ -43,7 +43,7 @@ impl Plugin for ShopPlugin {
                 Self::render_territories.run_if(
                     resource_exists::<TerritoryTileMaterial>
                         .and_then(resource_exists::<EmptyTileMaterial>)
-                        .and_then(resource_exists_and_changed::<ControllingPlayer>),
+                        .and_then(resource_exists::<ControllingPlayer>),
                 ),
                 Self::update_tile_material.run_if(
                     resource_exists_and_changed::<SelectedMerch>
@@ -72,66 +72,65 @@ impl Plugin for ShopPlugin {
 impl ShopPlugin {
     fn setup_ui(
         mut commands: Commands,
-        games: Query<&GamePhase, Changed<GamePhase>>,
+        games: Query<(&GamePhase, &GamePlayers), Or<(Changed<GamePhase>, Added<GamePlayers>)>>,
         merch_registry: Res<MerchRegistry>,
     ) {
-        if !games
+        if let Some((_, players)) = games
             .get_single()
-            .is_ok_and(|phase| matches!(phase, GamePhase::Choose))
+            .ok()
+            .filter(|(phase, _)| matches!(phase, GamePhase::Choose))
         {
-            return;
-        };
-        info!("Running setup ui");
-        let root = commands.spawn(ShopUIRoot::bundle()).id();
-        commands
-            .ui_builder(root)
-            .column(|column| {
-                column.label(LabelConfig::from("L. MARTY's LASER MART"));
-                let merch = merch_registry
-                    .sorted()
-                    .into_iter()
-                    .map(|(_, merch)| merch.name())
-                    .collect();
-                column
-                    .radio_group(merch, None, false)
-                    .insert(ShopMerchOption)
-                    .style()
-                    .max_height(Val::Percent(100.))
-                    .overflow(Overflow::clip_y())
-                    .flex_direction(FlexDirection::Column);
-                column
-                    .radio_group(
-                        vec!["Player 1".to_string(), "Player 2".to_string()],
-                        0,
-                        false,
-                    )
-                    .insert(ShopPlayerSwitch)
-                    .style()
-                    .max_height(Val::Percent(100.))
-                    .overflow(Overflow::clip_y())
-                    .flex_direction(FlexDirection::Row);
-                column
-                    .container(
-                        ButtonBundle {
-                            style: Style {
-                                width: Val::Percent(100.),
-                                height: Val::Px(30.),
-                                flex_direction: FlexDirection::Column,
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
+            info!("Running setup ui");
+            let root = commands.spawn(ShopUIRoot::bundle()).id();
+            commands
+                .ui_builder(root)
+                .column(|column| {
+                    column.label(LabelConfig::from("L. MARTY's LASER MART"));
+                    let merch = merch_registry
+                        .sorted()
+                        .into_iter()
+                        .map(|(_, merch)| merch.name())
+                        .collect();
+                    column
+                        .radio_group(merch, None, false)
+                        .insert(ShopMerchOption)
+                        .style()
+                        .max_height(Val::Percent(100.))
+                        .overflow(Overflow::clip_y())
+                        .flex_direction(FlexDirection::Column);
+                    let player_labels = (0..players.len())
+                        .map(|index| format!("Player {}", index + 1).to_string())
+                        .collect::<Vec<_>>();
+                    column
+                        .radio_group(player_labels, 0, false)
+                        .insert(ShopPlayerSwitch)
+                        .style()
+                        .max_height(Val::Percent(100.))
+                        .overflow(Overflow::clip_y())
+                        .flex_direction(FlexDirection::Row);
+                    column
+                        .container(
+                            ButtonBundle {
+                                style: Style {
+                                    width: Val::Percent(100.),
+                                    height: Val::Px(30.),
+                                    flex_direction: FlexDirection::Column,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                background_color: Color::Srgba(palettes::css::BLUE).into(),
                                 ..default()
                             },
-                            background_color: Color::Srgba(palettes::css::BLUE).into(),
-                            ..default()
-                        },
-                        |container| {
-                            container.label(LabelConfig::from("Ready!"));
-                        },
-                    )
-                    .insert(ReadyButton);
-            })
-            .style()
-            .max_height(Val::Percent(100.));
+                            |container| {
+                                container.label(LabelConfig::from("Ready!"));
+                            },
+                        )
+                        .insert(ReadyButton);
+                })
+                .style()
+                .max_height(Val::Percent(100.));
+        }
     }
 
     fn clear_shop(
@@ -180,9 +179,9 @@ impl ShopPlugin {
         mut commands: Commands,
         controlling_player: Option<ResMut<ControllingPlayer>>,
         players: Query<&GamePlayers>,
-        mut player_switch: Query<&mut RadioGroup, (With<ShopPlayerSwitch>, Changed<RadioGroup>)>,
+        player_switch: Query<&RadioGroup, (With<ShopPlayerSwitch>, Changed<RadioGroup>)>,
     ) {
-        let Ok(mut player_switch) = player_switch.get_single_mut() else {
+        let Ok(player_switch) = player_switch.get_single() else {
             return;
         };
         let Ok(game_players) = players
@@ -200,10 +199,9 @@ impl ShopPlugin {
                 controlling_player.0 = selected_player;
                 info!("Setting controlling player to {}", selected_player);
             } else {
+                info!("Inserting controlling player to {}", selected_player);
                 commands.insert_resource(ControllingPlayer(selected_player))
             }
-        } else if controlling_player.is_some() {
-            player_switch.select(0);
         }
     }
 
