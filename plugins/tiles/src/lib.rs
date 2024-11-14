@@ -1,16 +1,16 @@
-use std::{any::TypeId, marker::PhantomData};
+use std::{any::TypeId, collections::HashSet, marker::PhantomData};
 
 use bevy::{
     color::{Color, Mix},
     ecs::world::Command,
     prelude::{
         info, Added, App, AssetServer, Assets, Changed, ColorMaterial, Commands, Component, Deref,
-        Entity, Event, EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Or, Plugin,
-        Query, Res, ResMut, SystemSet, Update, With, World,
+        DerefMut, Entity, Event, EventReader, Handle, IntoSystemConfigs, IntoSystemSetConfigs, Or,
+        Plugin, Query, Res, ResMut, SystemSet, Update, With, World,
     },
 };
 
-use game_loop::{GameLoopSystems, GamePhase, InGame, PlayerColorAdjuster};
+use game_loop::{GameLoopSystems, GamePhase, InGame, Player, PlayerColorAdjuster};
 pub use lasers;
 use lasers::{
     Amplification, Direction, LaserHitEvent, LaserPlugin, LaserSystems, Position, Rotation,
@@ -40,15 +40,72 @@ pub struct TilesPlugin;
 
 impl Plugin for TilesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(LaserPlugin).configure_sets(
-            Update,
-            (
-                TileSystems::Activate.after(GameLoopSystems),
-                LaserSystems,
-                TileSystems::OnHit,
+        app.add_plugins(LaserPlugin)
+            .configure_sets(
+                Update,
+                (
+                    TileSystems::Activate.after(GameLoopSystems),
+                    LaserSystems,
+                    TileSystems::OnHit,
+                )
+                    .chain(),
             )
-                .chain(),
-        );
+            .add_systems(Update, Self::update_territories);
+    }
+}
+
+impl TilesPlugin {
+    // This could be better optimized in the future by only running conditional on a tile spawning or
+    // being destroyed under a player's control and using a `Changed` query filter to track that
+    // Owned tiles would need to be tracked by a marker component on the player entity or possibly
+    // as children under the entity to implement this
+    fn update_territories(
+        mut commands: Commands,
+        tilemaps: Query<&TilemapEntities>,
+        tiles: Query<(&Position, &Owner)>,
+        mut territories: Query<(Entity, Option<&mut Territory>), With<Player>>,
+    ) {
+        let Ok(tilemap) = tilemaps.get_single() else {
+            info!("Found none or multiple tilemaps");
+            return;
+        };
+        let mut sorted_tiles = tiles.iter().sort::<&Owner>().peekable();
+
+        for (player, territory) in &mut territories.iter_mut().sort::<Entity>() {
+            let mut updated_territory: HashSet<Entity> = HashSet::new();
+
+            let Some((position, _)) = sorted_tiles.find(|(_, owner)| ***owner == player) else {
+                info!(
+                    "Could not find the relevant owned tiles for player with entity {}",
+                    player
+                );
+                continue;
+            };
+
+            for coord in (**position).range(Territory::RANGE as u32) {
+                if let Some(tile_entity) = tilemap.tiles.get(&coord) {
+                    updated_territory.insert(*tile_entity);
+                }
+            }
+
+            while sorted_tiles
+                .peek()
+                .is_some_and(|(_, owner)| ***owner == player)
+            {
+                let (position, _) = sorted_tiles.next().unwrap();
+                for coord in (**position).range(Territory::RANGE as u32) {
+                    if let Some(tile_entity) = tilemap.tiles.get(&coord) {
+                        updated_territory.insert(*tile_entity);
+                    }
+                }
+            }
+
+            if let Some(mut territory) = territory {
+                **territory = updated_territory;
+            } else {
+                commands.entity(player).insert(Territory(updated_territory));
+            }
+        }
     }
 }
 
@@ -247,7 +304,7 @@ pub struct TileSpawnEvent {
     pub game: Entity,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Component, Deref)]
 pub struct Owner(Entity);
 
@@ -289,4 +346,12 @@ impl TileParameters {
             ..Default::default()
         }
     }
+}
+
+#[derive(Clone, Debug)]
+#[derive(Component, Deref, DerefMut)]
+pub struct Territory(HashSet<Entity>);
+
+impl Territory {
+    pub const RANGE: usize = 4;
 }

@@ -23,19 +23,25 @@ pub struct TilemapPlugin;
 
 impl Plugin for TilemapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, EmptyTileMaterial::startup_system)
-            .add_systems(
-                Update,
-                (
-                    Self::destroy_targeted_tile.run_if(resource_removed::<TargetedTile>()),
-                    Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
-                    Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
-                    Self::handle_cursor_position,
-                    Self::update_cursor_directions,
-                )
-                    .chain()
-                    .in_set(TilemapSystems),
-            );
+        app.add_systems(
+            Startup,
+            (
+                EmptyTileMaterial::startup_system,
+                TerritoryTileMaterial::startup_system,
+            ),
+        )
+        .add_systems(
+            Update,
+            (
+                Self::destroy_targeted_tile.run_if(resource_removed::<TargetedTile>()),
+                Self::update_targeted_tile.run_if(resource_exists_and_changed::<TargetedTile>),
+                Self::spawn_targeted_tile.run_if(resource_added::<TargetedTile>),
+                Self::handle_cursor_position,
+                Self::update_cursor_directions,
+            )
+                .chain()
+                .in_set(TilemapSystems),
+        );
     }
 }
 
@@ -260,6 +266,19 @@ pub struct EmptyTileMaterial(Handle<ColorMaterial>);
 impl EmptyTileMaterial {
     fn new(materials: &mut Assets<ColorMaterial>) -> Self {
         EmptyTileMaterial(materials.add(Color::WHITE))
+    }
+
+    fn startup_system(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {
+        commands.insert_resource(Self::new(materials.as_mut()));
+    }
+}
+
+#[derive(Deref, Resource)]
+pub struct TerritoryTileMaterial(Handle<ColorMaterial>);
+
+impl TerritoryTileMaterial {
+    fn new(materials: &mut Assets<ColorMaterial>) -> TerritoryTileMaterial {
+        Self(materials.add(Color::from(bevy::color::palettes::basic::SILVER)))
     }
 
     fn startup_system(mut commands: Commands, mut materials: ResMut<Assets<ColorMaterial>>) {

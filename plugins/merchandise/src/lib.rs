@@ -5,7 +5,7 @@ use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 use bevy_anyhow_alert::*;
 
 use game_loop::{GameInstance, GamePlayers, Player};
-use tiles::TileSpawnEvent;
+use tiles::{Territory, TileSpawnEvent};
 
 mod components;
 pub use components::*;
@@ -44,7 +44,7 @@ impl MerchPlugin {
         mut purchases: EventReader<Purchase>,
         mut tile_spawns: EventWriter<TileSpawnEvent>,
         registry: Res<MerchRegistry>,
-        mut shoppers: Query<&mut Money, With<Shopper>>,
+        mut shoppers: Query<(&mut Money, &Territory), With<Shopper>>,
         games: Query<(Entity, &GamePlayers), With<GameInstance>>,
     ) -> ResultVec<(), PurchaseError> {
         let mut errors = vec![];
@@ -55,7 +55,7 @@ impl MerchPlugin {
         } in purchases.read()
         {
             info!("Handling purchase");
-            let Ok(mut money) = shoppers.get_mut(*buyer) else {
+            let Ok((mut money, territory)) = shoppers.get_mut(*buyer) else {
                 continue;
             };
 
@@ -67,21 +67,26 @@ impl MerchPlugin {
                 continue;
             };
 
-            info!("Player money recognized");
+            info!("Player recognized");
             let cost = merch.price();
             if **money >= *cost {
                 if let Some(tile_id) = registry.get_type(&merch.id()) {
-                    **money = money.saturating_sub(*cost);
-                    info!(
-                        "Tile spawn event on tile {:?} for tile type {:?}",
-                        *on_tile, *tile_id
-                    );
-                    tile_spawns.send(TileSpawnEvent {
-                        tile_id: *tile_id,
-                        on_tile: *on_tile,
-                        owner: *buyer,
-                        game,
-                    });
+                    if territory.contains(on_tile) {
+                        **money = money.saturating_sub(*cost);
+                        info!(
+                            "Tile spawn event on tile {:?} for tile type {:?}",
+                            *on_tile, *tile_id
+                        );
+                        tile_spawns.send(TileSpawnEvent {
+                            tile_id: *tile_id,
+                            on_tile: *on_tile,
+                            owner: *buyer,
+                            game,
+                        });
+                    } else {
+                        info!("Cannot purchase on tile outside of territory");
+                        errors.push(PurchaseError::UncontrolledTile { tile: *on_tile })
+                    }
                 } else {
                     info!("Unknown merch error");
                     errors.push(PurchaseError::UnknownMerch {
@@ -138,6 +143,8 @@ pub enum PurchaseError {
         cost: Money,
         money: Money,
     },
+    #[error("N")]
+    UncontrolledTile { tile: Entity },
     #[error("N")]
     UnknownMerch { merch_id: MerchId },
 }
