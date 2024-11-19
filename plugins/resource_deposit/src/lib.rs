@@ -5,6 +5,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 use game_loop::InGame;
 use health::Health;
 use merchandise::Money;
+use popups::PopupEvent;
 use tiles::{
     lasers::{Consumption, Direction, Position},
     Tile, TileParameters, TilePlugin,
@@ -99,6 +100,12 @@ impl Command for ResourceDepositOnHit {
         } else {
             let health_decrease = min(**resource_health, self.strength);
             **resource_health -= health_decrease;
+            world.trigger_targets(
+                PopupEvent {
+                    text: String::from(format!("-{}", self.strength)),
+                },
+                self.tile,
+            );
         }
     }
 }

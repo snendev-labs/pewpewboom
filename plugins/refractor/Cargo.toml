@@ -8,6 +8,7 @@ bevy = { workspace = true }
 game_loop = { workspace = true }
 health = { workspace = true }
 merchandise = { workspace = true }
+popups = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }
 tiles = { workspace = true }

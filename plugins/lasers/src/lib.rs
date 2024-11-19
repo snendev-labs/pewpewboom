@@ -120,6 +120,7 @@ impl LaserPlugin {
                             .iter()
                             .any(|&direction| direction == current_direction)
                     {
+                        info!("Laser hit event found");
                         laser_hit_events.send(LaserHitEvent {
                             consumer: collider,
                             strength,
@@ -186,6 +187,16 @@ impl From<Hex> for Position {
 impl From<Tile> for Position {
     fn from(value: Tile) -> Position {
         Self(*value)
+    }
+}
+
+impl Position {
+    pub fn get_tile_entity(&self, world: &mut World) -> Option<Entity> {
+        let mut query = world.query::<&TilemapEntities>();
+        query
+            .get_single(world)
+            .ok()
+            .and_then(|tilemap| tilemap.tiles.get(&(**self)).copied())
     }
 }
 

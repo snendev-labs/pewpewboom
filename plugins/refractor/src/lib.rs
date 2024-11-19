@@ -10,6 +10,7 @@ use bevy::{
 use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use popups::PopupEvent;
 use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
@@ -203,6 +204,12 @@ impl Command for RefractorOnHit {
             .get_mut::<Health>(self.tile)
             .expect("RefractorOnHit entity should have Health component added to it");
         **consumer_health -= self.strength;
+        world.trigger_targets(
+            PopupEvent {
+                text: String::from(format!("-{}", self.strength)),
+            },
+            self.tile,
+        );
     }
 }
 

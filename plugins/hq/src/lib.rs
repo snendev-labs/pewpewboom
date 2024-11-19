@@ -2,6 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use game_loop::InGame;
 use health::Health;
+use popups::PopupEvent;
 use tiles::{
     lasers::{Consumption, Direction, Position},
     Owner, Tile, TileParameters, TilePlugin,
@@ -86,9 +87,20 @@ pub struct HQOnHit {
 
 impl Command for HQOnHit {
     fn apply(self, world: &mut World) {
-        let mut consumer_health = world
-            .get_mut::<Health>(self.tile)
+        let mut query = world.query::<(&Position, &mut Health)>();
+        let (position, mut consumer_health) = query
+            .get_mut(world, self.tile)
             .expect("HQOnHit command should be fired for entity with a health component");
         **consumer_health -= self.strength;
+        let position = position.clone();
+
+        if let Some(tile_entity) = position.get_tile_entity(world) {
+            world.trigger_targets(
+                PopupEvent {
+                    text: String::from(format!("-{}", self.strength)),
+                },
+                tile_entity,
+            );
+        }
     }
 }

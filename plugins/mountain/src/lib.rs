@@ -2,6 +2,7 @@ use bevy::{color::palettes, ecs::world::Command, prelude::*};
 
 use game_loop::InGame;
 use health::Health;
+use popups::PopupEvent;
 use tiles::{
     lasers::{Consumption, Direction, Position},
     Tile, TileParameters, TilePlugin,
@@ -54,7 +55,12 @@ pub struct MountainSpawn {
 
 impl Command for MountainSpawn {
     fn apply(self, world: &mut World) {
-        world.spawn((MountainTile, self.position, InGame::new(self.game)));
+        world.spawn((
+            MountainTile,
+            self.position,
+            Health::new(5),
+            InGame::new(self.game),
+        ));
     }
 }
 
@@ -84,5 +90,11 @@ impl Command for MountainOnHit {
             .get_mut::<Health>(self.tile)
             .expect("MountainOnHit command should be fired for entity with a health component");
         **consumer_health -= self.strength;
+        world.trigger_targets(
+            PopupEvent {
+                text: String::from(format!("-{}", self.strength)),
+            },
+            self.tile,
+        );
     }
 }

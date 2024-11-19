@@ -17,6 +17,7 @@ laser_visuals = { path = "plugins/laser-visuals" }
 map_generator = { path = "plugins/map_generator" }
 merchandise = { path = "plugins/merchandise" }
 mountain = { path = "plugins/mountain" }
+popups = { path = "plugins/popups" }
 reflector = { path = "plugins/reflector" }
 refractor = { path = "plugins/refractor" }
 rotater = { path = "plugins/rotater" }
@@ -63,6 +64,7 @@ laser_visuals = { workspace = true }
 map_generator = { workspace = true }
 merchandise = { workspace = true }
 mountain = { workspace = true }
+popups = { workspace = true }
 reflector = { workspace = true }
 refractor = { workspace = true }
 resource_deposit = { workspace = true }
