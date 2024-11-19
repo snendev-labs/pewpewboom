@@ -29,3 +29,9 @@ pub struct HealthSystems;
 #[derive(Clone, Copy, Debug, Default)]
 #[derive(Component, Reflect, Deref, DerefMut)]
 pub struct Health(usize);
+
+impl Health {
+    pub fn new(value: usize) -> Health {
+        Self(value)
+    }
+}

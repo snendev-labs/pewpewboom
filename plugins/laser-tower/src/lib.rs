@@ -10,6 +10,7 @@ use bevy::{
 use game_loop::InGame;
 use health::Health;
 use merchandise::{MerchAppExt, Merchandise, Money};
+use popups::PopupEvent;
 use shop::JustPurchased;
 use tilemap::TilemapLayout;
 use tiles::{
@@ -192,6 +193,12 @@ impl Command for LaserTowerOnHit {
             .get_mut::<Health>(self.tile)
             .expect("Laser tower to have Health");
         **laser_tower_health -= self.strength;
+        world.trigger_targets(
+            PopupEvent {
+                text: String::from(format!("-{}", self.strength)),
+            },
+            self.tile,
+        );
     }
 }
 

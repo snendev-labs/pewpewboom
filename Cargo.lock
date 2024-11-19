@@ -2212,6 +2212,8 @@ dependencies = [
  "bevy",
  "game_loop",
  "health",
+ "popups",
+ "tilemap",
  "tiles",
 ]
 
@@ -2371,6 +2373,7 @@ dependencies = [
  "game_loop",
  "health",
  "merchandise",
+ "popups",
  "shop",
  "tilemap",
  "tiles",
@@ -2589,6 +2592,7 @@ dependencies = [
  "bevy",
  "game_loop",
  "health",
+ "popups",
  "tiles",
 ]
 
@@ -3129,6 +3133,7 @@ dependencies = [
  "map_generator",
  "merchandise",
  "mountain",
+ "popups",
  "reflector",
  "refractor",
  "resource_deposit",
@@ -3208,6 +3213,14 @@ dependencies = [
  "rustix",
  "tracing",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "popups"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "tilemap",
 ]
 
 [[package]]
@@ -3390,6 +3403,7 @@ dependencies = [
  "game_loop",
  "health",
  "merchandise",
+ "popups",
  "shop",
  "tilemap",
  "tiles",
@@ -3453,6 +3467,7 @@ dependencies = [
  "game_loop",
  "health",
  "merchandise",
+ "popups",
  "tiles",
 ]
 

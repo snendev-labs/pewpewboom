@@ -205,6 +205,7 @@ where
         {
             if let Ok((entity, _position, tile)) = tiles.get(*consumer) {
                 if let Some(command) = tile.on_hit(entity, *strength, *shooter) {
+                    info!("Tile hit command added to queue");
                     commands.add(command);
                 }
             }

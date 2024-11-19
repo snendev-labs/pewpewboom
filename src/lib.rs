@@ -25,6 +25,7 @@ impl PluginGroup for PewPewBoomPlugins {
             .add(map_generator::MapGeneratorPlugin)
             .add(merchandise::MerchPlugin)
             .add(mountain::MountainPlugin)
+            .add(popups::PopupPlugin)
             .add(resource_deposit::ResourceDepositPlugin)
             .add(health::HealthPlugin)
             .add(tilemap::TilemapPlugin)
