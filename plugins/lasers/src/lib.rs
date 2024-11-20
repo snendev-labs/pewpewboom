@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use game_loop::{ActionCompleteEvent, GamePhase};
+use game_loop::{ActionCompleteEvent, GamePhase, MapSize};
 use hexx::*;
 use tilemap::{Tile, TilemapEntities};
 
@@ -10,7 +10,10 @@ impl Plugin for LaserPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LaserPathEvent>()
             .add_event::<LaserHitEvent>()
-            .add_systems(Update, Self::track_lasers.in_set(LaserSystems));
+            .add_systems(
+                Update,
+                (Self::track_lasers, Self::despawn_lasers).in_set(LaserSystems),
+            );
     }
 }
 
@@ -40,11 +43,10 @@ impl LaserPlugin {
         >,
         mut laser_hit_events: EventWriter<LaserHitEvent>,
         mut laser_path_events: EventWriter<LaserPathEvent>,
-        games: Query<(Entity, &GamePhase)>,
-        tilemaps: Query<&TilemapEntities>,
+        games: Query<(Entity, &MapSize, &GamePhase)>,
         mut events: EventWriter<ActionCompleteEvent>,
     ) {
-        let Ok((game, game_phase)) = games.get_single() else {
+        let Ok((game, map_size, game_phase)) = games.get_single() else {
             return;
         };
 
@@ -52,29 +54,31 @@ impl LaserPlugin {
             return;
         };
 
-        let Ok(tilemap_entities) = tilemaps.get_single() else {
-            info!("No tilemap found");
-            return;
-        };
-
-        for (laser_position, laser_direction, laser_shooter) in &lasers {
-            const LASER_RANGE: usize = 100;
-            const BASE_LASER_STRENGTH: usize = 1;
-
+        'all_lasers: for (laser_position, laser_direction, laser_shooter) in &lasers {
             let mut path = Vec::new();
             let mut current_position = *laser_position;
             path.push(current_position);
             let mut current_direction = *laser_direction;
-            let mut strength = BASE_LASER_STRENGTH;
+            info!(
+                "Simulating laser from starting position {:?} and direction {:?}",
+                current_position, current_direction
+            );
+            let mut strength = Laser::POWER;
 
-            for _ in 0..LASER_RANGE {
+            loop {
                 let next_position: Position =
                     current_position.neighbor(current_direction.as_hex()).into();
-
                 // Change this later to exit the while loop appropriately and still progress the laser path outside the tilemap for visual effect
-                if !tilemap_entities.contains_key(&(*next_position))
-                    || path.contains(&next_position)
+                // Need to consider edge case of reflector directly back on same path...
+                if path.contains(&next_position) {
+                    info!("Reached previously visited position");
+                    break;
+                }
+
+                if (*current_position).unsigned_distance_to(Hex::ORIGIN)
+                    > 3 * std::cmp::max(map_size.half_width, map_size.half_height) as u32
                 {
+                    info!("Laser out of bounds off map");
                     break;
                 }
 
@@ -91,7 +95,25 @@ impl LaserPlugin {
                     .iter()
                     .find(|(_, position, _, _, _, _, _, _)| **position == next_position)
                 {
+                    // Update the path with a new segment point upon collision with a tile
                     path.push(next_position);
+
+                    if consumption.is_some()
+                        && consumption
+                            .unwrap()
+                            .vulnerable
+                            .iter()
+                            .any(|&direction| direction == current_direction)
+                    {
+                        info!("Laser hit event found at {:?}", next_position);
+                        laser_hit_events.send(LaserHitEvent {
+                            consumer: collider,
+                            strength,
+                            shooter: **laser_shooter,
+                        });
+                        laser_path_events.send(LaserPathEvent { path: path.clone() });
+                        continue 'all_lasers;
+                    }
 
                     if let Some(refracted_direction) =
                         refraction.and_then(|refraction| refraction.refract(current_direction))
@@ -99,8 +121,8 @@ impl LaserPlugin {
                         current_direction = refracted_direction;
                         info!("Laser refracted")
                     }
-                    if let Some(reflected_direction) =
-                        reflection.and_then(|reflection| reflection.reflect(current_direction))
+                    if let Some(reflected_direction) = reflection
+                        .and_then(|reflection| Some(reflection.reflect(current_direction)))
                     {
                         current_direction = reflected_direction;
                     }
@@ -113,32 +135,34 @@ impl LaserPlugin {
                     if let Some(amplification) = amplification {
                         strength += **amplification;
                     }
-                    if consumption.is_some()
-                        && consumption
-                            .unwrap()
-                            .vulnerable
-                            .iter()
-                            .any(|&direction| direction == current_direction)
-                    {
-                        info!("Laser hit event found");
-                        laser_hit_events.send(LaserHitEvent {
-                            consumer: collider,
-                            strength,
-                            shooter: **laser_shooter,
-                        });
-                        laser_path_events.send(LaserPathEvent { path: path.clone() });
-                        break;
-                    }
                 }
                 current_position = next_position;
             }
 
+            // Update path with ending point, particularly important to mark if
+            // no collisions or consumptions of the laser occur
             path.push(current_position);
-            info!("Sent path event {:?}", path);
+            info!("Sent uninterrupted path event {:?}", path);
             laser_path_events.send(LaserPathEvent { path });
         }
 
         events.send(ActionCompleteEvent { game });
+    }
+
+    fn despawn_lasers(
+        mut commands: Commands,
+        games: Query<&GamePhase, Changed<GamePhase>>,
+        lasers: Query<Entity, With<Laser>>,
+    ) {
+        if let Some(_) = games
+            .get_single()
+            .ok()
+            .filter(|game_phase| matches!(game_phase, GamePhase::Draw))
+        {
+            for laser in &lasers {
+                commands.entity(laser).despawn();
+            }
+        }
     }
 }
 
@@ -283,7 +307,7 @@ impl From<EdgeDirection> for Direction {
 pub struct Laser;
 
 impl Laser {
-    pub const POWER: f32 = 1.;
+    pub const POWER: usize = 1;
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -322,18 +346,20 @@ impl Reflection {
         Reflection { facing }
     }
 
-    pub fn reflect(&self, incoming: Direction) -> Option<Direction> {
+    pub fn reflect(&self, incoming: Direction) -> Direction {
         let opposite = self.facing.opposite();
         if incoming == opposite.counterclockwise(1) {
-            Some(opposite.clockwise(1))
+            self.facing.clockwise(1)
         } else if incoming == opposite.clockwise(1) {
-            Some(opposite.counterclockwise(1))
+            self.facing.counterclockwise(1)
         } else if incoming == self.facing.counterclockwise(1) {
-            Some(self.facing.clockwise(1))
+            opposite.clockwise(1)
         } else if incoming == self.facing.clockwise(1) {
-            Some(self.facing.counterclockwise(1))
+            opposite.counterclockwise(1)
+        } else if incoming == self.facing {
+            opposite
         } else {
-            None
+            self.facing
         }
     }
 }
