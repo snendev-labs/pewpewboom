@@ -186,7 +186,7 @@ impl Command for RefractorActivate {
             Refraction::new(self.direction),
             Consumption::bundle(
                 self.tile,
-                self.direction.back_directions().to_vec(),
+                self.direction.front_directions().to_vec(),
                 self.position.clone(),
             ),
         ));

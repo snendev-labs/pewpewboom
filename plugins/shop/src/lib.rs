@@ -58,6 +58,7 @@ impl Plugin for ShopPlugin {
                 ),
                 Self::clear_shop,
                 Self::spawn_drag_markers,
+                Self::update_old_purchases,
                 Self::update_tile_parameters,
                 Self::start_drag.run_if(resource_exists::<CursorWorldPosition>),
                 Self::handle_drag,
@@ -289,14 +290,14 @@ impl ShopPlugin {
                     .and_then(|merch| merch_materials.get(&merch.id()))
                 {
                     *tile_material = merch_material.clone();
-                } else {
-                    *tile_material = empty_tile_material.clone();
                 }
             }
         }
         // todo: check that tile isn't occupied
         // Only checking for empty tiles and returning them to empty material, but filled tiles are
         // changed permanently - this is the bug
+        // Remove resource run condition doesn't seem to be working - not running in final tick after
+        // `TargetedTile` is removed
         if targeted_tile.as_deref().cloned() != *last_target {
             if let Some(target) = last_target
                 .as_ref()
@@ -408,6 +409,27 @@ impl ShopPlugin {
                 .id();
 
             commands.entity(entity).add_child(marker);
+        }
+    }
+
+    fn update_old_purchases(
+        mut commands: Commands,
+        games: Query<&GamePhase, Changed<GamePhase>>,
+        markers: Query<Entity, With<TileAdjuster>>,
+        purchases: Query<Entity, With<JustPurchased>>,
+    ) {
+        if let Some(_) = games
+            .get_single()
+            .ok()
+            .filter(|game_phase| !matches!(game_phase, GamePhase::Choose))
+        {
+            for marker in &markers {
+                commands.entity(marker).despawn();
+            }
+
+            for purchase in &purchases {
+                commands.entity(purchase).remove::<JustPurchased>();
+            }
         }
     }
 
