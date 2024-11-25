@@ -1,8 +1,8 @@
-use std::cmp::max;
-
 use bevy::prelude::*;
-use entropy::{EntropyBundle, GlobalEntropy};
+
 use hexx::{shapes, Hex, HexLayout};
+
+use entropy::{EntropyBundle, GlobalEntropy};
 
 pub struct GameLoopPlugin;
 
@@ -21,6 +21,9 @@ impl Plugin for GameLoopPlugin {
                     Self::complete_choose_phase,
                     Self::complete_action_phase,
                     Self::complete_drawing_phase,
+                    Self::spawn_pauses,
+                    Self::tick_pauses,
+                    Self::exit_pause,
                 )
                     .chain()
                     .in_set(GameLoopSystems),
@@ -75,11 +78,11 @@ impl GameLoopPlugin {
                     .map(|entity| players.get(*entity).ok().flatten())
                     .all(|ready| ready.is_some());
                 if all_ready {
-                    *phase = GamePhase::Act;
+                    *phase = GamePhase::PreActPause;
                     for player in &game_players.0 {
                         commands.entity(*player).remove::<Ready>();
                     }
-                    info!("Game phase changed to act");
+                    info!("Game phase changed to pre act pause");
                 }
             }
         }
@@ -103,8 +106,60 @@ impl GameLoopPlugin {
     ) {
         for DrawingCompleteEvent { game } in events.read() {
             if let Ok(mut phase) = games.get_mut(*game) {
-                *phase = GamePhase::Choose;
-                info!("Game phase changed to choose")
+                *phase = GamePhase::PostDrawPause;
+                info!("Game phase changed to draw pause")
+            }
+        }
+    }
+
+    fn spawn_pauses(mut commands: Commands, games: Query<&GamePhase, Changed<GamePhase>>) {
+        for game_phase in &games {
+            match game_phase {
+                GamePhase::PreActPause => {
+                    commands.spawn((
+                        PauseTimer {
+                            timer: Timer::from_seconds(2., TimerMode::Once),
+                        },
+                        Pause::PreAct,
+                    ));
+                }
+                GamePhase::PostDrawPause => {
+                    commands.spawn((
+                        PauseTimer {
+                            timer: Timer::from_seconds(2., TimerMode::Once),
+                        },
+                        Pause::PostDraw,
+                    ));
+                }
+                _ => {
+                    return;
+                }
+            }
+        }
+    }
+
+    fn tick_pauses(mut pause_timers: Query<&mut PauseTimer, With<Pause>>, time: Res<Time>) {
+        for mut pause_timer in &mut pause_timers {
+            pause_timer.timer.tick(time.delta());
+        }
+    }
+
+    fn exit_pause(
+        mut commands: Commands,
+        mut games: Query<&mut GamePhase>,
+        pause_timers: Query<(Entity, &PauseTimer, &Pause)>,
+    ) {
+        let Ok(mut game_phase) = games.get_single_mut() else {
+            return;
+        };
+
+        for (pause_entity, pause_timer, pause) in &pause_timers {
+            if pause_timer.timer.finished() {
+                *game_phase = match pause {
+                    Pause::PreAct => GamePhase::Act,
+                    Pause::PostDraw => GamePhase::Choose,
+                };
+                commands.entity(pause_entity).despawn();
             }
         }
     }
@@ -131,7 +186,9 @@ pub enum GamePhase {
     #[default]
     Choose,
     Act,
+    PreActPause,
     Draw,
+    PostDrawPause,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -233,4 +290,17 @@ pub struct ActionCompleteEvent {
 #[derive(Event)]
 pub struct DrawingCompleteEvent {
     pub game: Entity,
+}
+
+#[derive(Clone, Debug)]
+#[derive(Component)]
+pub enum Pause {
+    PreAct,
+    PostDraw,
+}
+
+#[derive(Clone, Debug)]
+#[derive(Component)]
+pub struct PauseTimer {
+    timer: Timer,
 }
