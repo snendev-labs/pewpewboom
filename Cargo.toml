@@ -22,6 +22,7 @@ reflector = { path = "plugins/reflector" }
 refractor = { path = "plugins/refractor" }
 rotater = { path = "plugins/rotater" }
 resource_deposit = { path = "plugins/resource_deposit" }
+sounds = { path = "plugins/sounds" }
 shop = { path = "plugins/shop" }
 tilemap = { path = "plugins/tilemap" }
 tiles = { path = "plugins/tiles" }
@@ -31,6 +32,7 @@ y_reflector = { path = "plugins/y_reflector" }
 bevy = { version = "0.14", default-features = false }
 bevy_anyhow_alert = "0.3"
 bevy_gizmos = "0.14"
+bevy_kira_audio = "0.20"
 bevy_prng = { version = "0.7", features = ["wyrand"] }
 bevy_rand = { version = "0.7", features = ["wyrand"] }
 bevy_rts_camera = { git = "https://github.com/snendev/bevy_rts_camera_2d" }
@@ -69,6 +71,7 @@ reflector = { workspace = true }
 refractor = { workspace = true }
 resource_deposit = { workspace = true }
 rotater = { workspace = true }
+sounds = { workspace = true }
 shop = { workspace = true }
 tilemap = { workspace = true }
 tiles = { workspace = true }
