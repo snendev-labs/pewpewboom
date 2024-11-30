@@ -2603,6 +2603,7 @@ dependencies = [
  "bevy",
  "bevy_anyhow_alert",
  "game_loop",
+ "sounds",
  "thiserror",
  "tiles",
 ]

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 # plugins
 game_loop = { workspace = true }
+sounds = { workspace = true }
 tiles = { workspace = true }
 # bevy
 bevy = { workspace = true }

@@ -5,6 +5,7 @@ use bevy::{prelude::*, reflect::GetTypeRegistration, utils::HashMap};
 use bevy_anyhow_alert::*;
 
 use game_loop::{GameInstance, GamePlayers, Player};
+use sounds::SingleSound;
 use tiles::{Territory, TileSpawnEvent};
 
 mod components;
@@ -41,6 +42,7 @@ impl MerchPlugin {
     }
 
     fn handle_purchases(
+        mut commands: Commands,
         mut purchases: EventReader<Purchase>,
         mut tile_spawns: EventWriter<TileSpawnEvent>,
         registry: Res<MerchRegistry>,
@@ -83,6 +85,7 @@ impl MerchPlugin {
                             owner: *buyer,
                             game,
                         });
+                        commands.trigger(SingleSound::SuccessfulPurchase);
                     } else {
                         info!("Cannot purchase on tile outside of territory");
                         errors.push(PurchaseError::UncontrolledTile { tile: *on_tile })
@@ -148,6 +151,9 @@ pub enum PurchaseError {
     #[error("N")]
     UnknownMerch { merch_id: MerchId },
 }
+
+#[derive(Event)]
+pub struct SuccessfulPurchase;
 
 #[derive(Debug, Default)]
 #[derive(Deref, DerefMut, Resource, Reflect)]
